@@ -39,11 +39,15 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- **Profile persistence:** `artifacts/mobile/domain/profile/ProfileRepository.ts` - deep module with anti-corruption layer for AsyncStorage
+- **Profile context:** `artifacts/mobile/context/AppContext.tsx` - consumes repository, exposes load/save failure state
+- **Profile tests:** `artifacts/mobile/__tests__/profile-repository.test.ts` - Given/When/Then tests for repository behavior
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- **Profile persistence boundary:** Deep module pattern with anti-corruption layer - AsyncStorage details encapsulated in `ProfileRepository.ts`, exposing only domain types and result types
+- **Profile migration:** Versioned DTO with automatic migration from legacy format (no version field) to current versioned structure
+- **Error observability:** Repository returns discriminated union results (success/error) that UI can react to, with recoverable outcomes for invalid data
 
 ## Product
 

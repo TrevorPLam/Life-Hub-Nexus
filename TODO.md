@@ -98,7 +98,7 @@ pnpm run typecheck
 
 ---
 
-## [ ] T-003 | STATUS: TODO | Create a deep local persistence module for profile data
+## [x] T-003 | STATUS: DONE | Create a deep local persistence module for profile data
 
 **Purpose:** Encapsulate profile storage, parsing, versioning, and error handling behind a narrow domain API.
 
@@ -129,11 +129,15 @@ pnpm --filter @workspace/mobile run typecheck
 
 ### Subtasks
 
-- [ ] T-003.01 | AGENT | Target: `artifacts/mobile/context/AppContext.tsx`, `artifacts/mobile/package.json` | Research the current profile fields, storage key, hydration sequence, and the T-007 test harness conventions. Confirm the focused test command before writing tests; do not modify test configuration in this task.
-- [ ] T-003.02 | AGENT | Target: `artifacts/mobile/__tests__/profile-repository.test.ts` | Write failing Given/When/Then tests: Given no stored profile, When loading, Then defaults are returned; Given legacy valid JSON, When loading, Then missing fields are migrated; Given malformed JSON, When loading, Then a recoverable invalid-data result is returned; Given a storage failure, When saving, Then an error result is returned.
-- [ ] T-003.03 | AGENT | Target: `artifacts/mobile/domain/profile/ProfileRepository.ts` | Implement the narrow repository interface and an AsyncStorage adapter. Add a versioned persisted DTO and a private migration function that produces the current domain profile.
-- [ ] T-003.04 | AGENT | Target: `artifacts/mobile/context/AppContext.tsx` | Refactor `AppProvider` to consume the repository result, expose load/save failure state appropriate for UI recovery, and retain the existing hydration invariant before route redirects.
-- [ ] T-003.05 | AGENT | Target: `artifacts/mobile/__tests__/profile-repository.test.ts`, `replit.md`, `TODO.md` | Run the focused test and mobile typecheck. Document the profile persistence boundary and migration rule. Record results before marking the parent complete.
+- [x] T-003.01 | AGENT | Target: `artifacts/mobile/context/AppContext.tsx`, `artifacts/mobile/package.json` | Research the current profile fields, storage key, hydration sequence, and the T-007 test harness conventions. Confirm the focused test command before writing tests; do not modify test configuration in this task.
+- [x] T-003.02 | AGENT | Target: `artifacts/mobile/__tests__/profile-repository.test.ts` | Write failing Given/When/Then tests: Given no stored profile, When loading, Then defaults are returned; Given legacy valid JSON, When loading, Then missing fields are migrated; Given malformed JSON, When loading, Then a recoverable invalid-data result is returned; Given a storage failure, When saving, Then an error result is returned.
+- [x] T-003.03 | AGENT | Target: `artifacts/mobile/domain/profile/ProfileRepository.ts` | Implement the narrow repository interface and an AsyncStorage adapter. Add a versioned persisted DTO and a private migration function that produces the current domain profile.
+- [x] T-003.04 | AGENT | Target: `artifacts/mobile/context/AppContext.tsx` | Refactor `AppProvider` to consume the repository result, expose load/save failure state appropriate for UI recovery, and retain the existing hydration invariant before route redirects.
+- [x] T-003.05 | AGENT | Target: `artifacts/mobile/__tests__/profile-repository.test.ts`, `replit.md`, `TODO.md` | Run the focused test and mobile typecheck. Document the profile persistence boundary and migration rule. Record results before marking the parent complete.
+
+### Completion Note
+
+2026-07-19 | T-003 | Profile persistence module | DONE | Created deep module at `artifacts/mobile/domain/profile/ProfileRepository.ts` with anti-corruption layer for AsyncStorage. Implemented versioned DTO (current version 1) with automatic migration from legacy format. Repository returns discriminated union results (success/error) for observable failures. Refactored `AppContext.tsx` to consume repository, exposing `loadError` and `saveError` state for UI recovery. All 5 Given/When/Then tests pass (defaults, legacy migration, malformed JSON, storage failure, valid save). Mobile typecheck fails due to pre-existing errors in `hooks/useColors.ts` (T-009 scope). Documented profile persistence boundary and migration rules in `replit.md`.
 
 ---
 

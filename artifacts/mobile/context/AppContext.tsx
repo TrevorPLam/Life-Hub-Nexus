@@ -1,88 +1,15 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createProfileRepository, Profile, ProfilePrivacy, PrivacyLevel } from '../domain/profile/ProfileRepository';
 
-const STORAGE_KEY = '@lifeos/profile';
-
-export type PrivacyLevel = 'public' | 'friends' | 'private';
-
-export interface ProfilePrivacy {
-  bio: PrivacyLevel;
-  birthday: PrivacyLevel;
-  location: PrivacyLevel;
-  occupation: PrivacyLevel;
-  website: PrivacyLevel;
-  phone: PrivacyLevel;
-  email: PrivacyLevel;
-  about: PrivacyLevel;
-  pronouns: PrivacyLevel;
-  socialLinks: PrivacyLevel;
-}
-
-export interface AppProfile {
-  // Identity
-  name: string;
-  username: string;
-  avatarColor: string;
-  avatarUri: string;     // local file URI from image picker, empty string = no photo
-  pronouns: string;      // e.g. "she/her", "he/him", "they/them"
-
-  // Personal data
-  bio: string;           // short tagline
-  about: string;         // longer "about me" paragraph
-  birthday: string;      // ISO date string e.g. "1995-08-14"
-  location: string;
-  occupation: string;
-  website: string;
-  phone: string;
-  email: string;
-
-  // Social links
-  socialTwitter: string;
-  socialInstagram: string;
-  socialLinkedin: string;
-
-  // Internals
-  onboarded: boolean;
-  privacy: ProfilePrivacy;
-}
-
-const DEFAULT_PRIVACY: ProfilePrivacy = {
-  bio: 'public',
-  birthday: 'friends',
-  location: 'public',
-  occupation: 'public',
-  website: 'public',
-  phone: 'private',
-  email: 'private',
-  about: 'public',
-  pronouns: 'public',
-  socialLinks: 'public',
-};
-
-const DEFAULT_PROFILE: AppProfile = {
-  name: '',
-  username: '',
-  avatarColor: '#6366F1',
-  avatarUri: '',
-  pronouns: '',
-  bio: '',
-  about: '',
-  birthday: '',
-  location: '',
-  occupation: '',
-  website: '',
-  phone: '',
-  email: '',
-  socialTwitter: '',
-  socialInstagram: '',
-  socialLinkedin: '',
-  onboarded: false,
-  privacy: DEFAULT_PRIVACY,
-};
+// Re-export types for UI components
+export type { PrivacyLevel, ProfilePrivacy };
+export type AppProfile = Profile;
 
 interface AppContextValue {
   profile: AppProfile;
-  hydrated: boolean;  // true once AsyncStorage has been read
+  hydrated: boolean;  // true once repository has been read
+  loadError: { type: 'invalid-data' | 'storage-error'; message: string } | null;
+  saveError: { type: 'storage-error'; message: string } | null;
   updateProfile: (updates: Partial<AppProfile>) => void;
   updatePrivacy: (field: keyof ProfilePrivacy, level: PrivacyLevel) => void;
   greeting: string;
@@ -98,47 +25,92 @@ function getGreeting(name: string): string {
 }
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [profile, setProfile] = useState<AppProfile>(DEFAULT_PROFILE);
+  const repository = createProfileRepository();
+  const [profile, setProfile] = useState<AppProfile>(() => {
+    // Initialize with defaults from repository
+    // In a real app, we'd load this from the repository, but for now we use the defaults
+    // that will be replaced once the repository loads
+    return {
+      name: '',
+      username: '',
+      avatarColor: '#6366F1',
+      avatarUri: '',
+      pronouns: '',
+      bio: '',
+      about: '',
+      birthday: '',
+      location: '',
+      occupation: '',
+      website: '',
+      phone: '',
+      email: '',
+      socialTwitter: '',
+      socialInstagram: '',
+      socialLinkedin: '',
+      onboarded: false,
+      privacy: {
+        bio: 'public',
+        birthday: 'friends',
+        location: 'public',
+        occupation: 'public',
+        website: 'public',
+        phone: 'private',
+        email: 'private',
+        about: 'public',
+        pronouns: 'public',
+        socialLinks: 'public',
+      },
+    };
+  });
   const [hydrated, setHydrated] = useState(false);
+  const [loadError, setLoadError] = useState<{ type: 'invalid-data' | 'storage-error'; message: string } | null>(null);
+  const [saveError, setSaveError] = useState<{ type: 'storage-error'; message: string } | null>(null);
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then(raw => {
-      if (raw) {
-        try {
-          const saved = JSON.parse(raw);
-          // Merge with defaults so new fields get picked up after upgrades
-          setProfile(prev => ({
-            ...prev,
-            ...saved,
-            privacy: { ...DEFAULT_PRIVACY, ...(saved.privacy || {}) },
-          }));
-        } catch {}
+    repository.load().then(result => {
+      if (result.success) {
+        setProfile(result.data);
+        setLoadError(null);
+      } else {
+        setLoadError(result.error);
+        // Keep defaults on load error
       }
-      // Mark hydrated whether or not we found saved data
       setHydrated(true);
     });
-  }, []);
+  }, [repository]);
 
   const updateProfile = useCallback((updates: Partial<AppProfile>) => {
     setProfile(prev => {
       const next = { ...prev, ...updates };
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      repository.save(next).then(result => {
+        if (!result.success) {
+          setSaveError(result.error);
+        } else {
+          setSaveError(null);
+        }
+      });
       return next;
     });
-  }, []);
+  }, [repository]);
 
   const updatePrivacy = useCallback((field: keyof ProfilePrivacy, level: PrivacyLevel) => {
     setProfile(prev => {
       const next = { ...prev, privacy: { ...prev.privacy, [field]: level } };
-      AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      repository.save(next).then(result => {
+        if (!result.success) {
+          setSaveError(result.error);
+        } else {
+          setSaveError(null);
+        }
+      });
       return next;
     });
-  }, []);
+  }, [repository]);
 
   const greeting = getGreeting(profile.name);
 
   return (
-    <AppContext.Provider value={{ profile, hydrated, updateProfile, updatePrivacy, greeting }}>
+    <AppContext.Provider value={{ profile, hydrated, loadError, saveError, updateProfile, updatePrivacy, greeting }}>
       {children}
     </AppContext.Provider>
   );
