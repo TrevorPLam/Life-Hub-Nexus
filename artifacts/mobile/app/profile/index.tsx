@@ -56,7 +56,8 @@ export default function ProfileScreen() {
     .some(f => profile[f as keyof typeof profile] && profile.privacy[f as keyof ProfilePrivacy] === 'public');
 
   const displayName = profile.name || 'Your Name';
-  const displayUsername = profile.username ? `@${profile.username}` : '@username';
+  const displayUsername = profile.username ? `@${profile.username}` : '';
+  const hasSocialLinks = profile.socialTwitter || profile.socialInstagram || profile.socialLinkedin;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -124,13 +125,23 @@ export default function ProfileScreen() {
           )}
 
           <Text style={[styles.displayName, { color: colors.foreground }]}>{displayName}</Text>
-          <Text style={[styles.username, { color: colors.mutedForeground }]}>{displayUsername}</Text>
+          <View style={styles.usernameRow}>
+            {displayUsername ? (
+              <Text style={[styles.username, { color: colors.mutedForeground }]}>{displayUsername}</Text>
+            ) : null}
+            {isVisible('pronouns') && profile.pronouns ? (
+              <View style={[styles.pronounsBadge, { backgroundColor: `${colors.primary}12`, borderColor: `${colors.primary}25` }]}>
+                <Text style={[styles.pronounsText, { color: colors.primary }]}>{profile.pronouns}</Text>
+                {viewMode === 'mine' && <PrivacyIcon level={profile.privacy.pronouns} />}
+              </View>
+            ) : null}
+          </View>
 
           {isVisible('bio') && profile.bio ? (
             <Text style={[styles.bio, { color: colors.foreground }]}>{profile.bio}</Text>
           ) : null}
 
-          {/* Location + Occupation inline */}
+          {/* Location + Occupation + Website inline */}
           <View style={styles.metaInline}>
             {isVisible('location') && profile.location ? (
               <View style={styles.metaChip}>
@@ -154,6 +165,31 @@ export default function ProfileScreen() {
               </View>
             ) : null}
           </View>
+
+          {/* Social links */}
+          {isVisible('socialLinks') && hasSocialLinks ? (
+            <View style={styles.socialRow}>
+              {profile.socialTwitter ? (
+                <View style={[styles.socialChip, { backgroundColor: `${colors.primary}10`, borderColor: `${colors.primary}20` }]}>
+                  <Text style={[styles.socialChipText, { color: colors.foreground }]}>𝕏 @{profile.socialTwitter}</Text>
+                </View>
+              ) : null}
+              {profile.socialInstagram ? (
+                <View style={[styles.socialChip, { backgroundColor: `${colors.social}10`, borderColor: `${colors.social}20` }]}>
+                  <Text style={[styles.socialChipText, { color: colors.foreground }]}>IG @{profile.socialInstagram}</Text>
+                </View>
+              ) : null}
+              {profile.socialLinkedin ? (
+                <View style={[styles.socialChip, { backgroundColor: `${colors.people}10`, borderColor: `${colors.people}20` }]}>
+                  <Feather name="linkedin" size={11} color={colors.people} />
+                  <Text style={[styles.socialChipText, { color: colors.foreground }]}>
+                    {profile.socialLinkedin.replace(/^https?:\/\/(www\.)?linkedin\.com\/in\//, '')}
+                  </Text>
+                </View>
+              ) : null}
+              {viewMode === 'mine' && <PrivacyIcon level={profile.privacy.socialLinks} />}
+            </View>
+          ) : null}
         </View>
 
         {/* Stats — always shown in my view, hidden in public */}
@@ -286,12 +322,18 @@ const styles = StyleSheet.create({
   colorPickerRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' },
   colorDot: { width: 30, height: 30, borderRadius: 15 },
 
-  displayName: { fontSize: 24, fontFamily: 'Inter_700Bold', letterSpacing: -0.4, marginBottom: 3 },
-  username: { fontSize: 14, fontFamily: 'Inter_400Regular', marginBottom: 10 },
+  displayName: { fontSize: 24, fontFamily: 'Inter_700Bold', letterSpacing: -0.4, marginBottom: 6 },
+  usernameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'center', marginBottom: 10 },
+  username: { fontSize: 14, fontFamily: 'Inter_400Regular' },
+  pronounsBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 12, borderWidth: 1 },
+  pronounsText: { fontSize: 12, fontFamily: 'Inter_500Medium' },
   bio: { fontSize: 15, fontFamily: 'Inter_400Regular', textAlign: 'center', lineHeight: 22, maxWidth: 280, marginBottom: 12 },
   metaInline: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' },
   metaChip: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   metaChipText: { fontSize: 13, fontFamily: 'Inter_400Regular' },
+  socialRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center', marginTop: 10, alignItems: 'center' },
+  socialChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1 },
+  socialChipText: { fontSize: 12, fontFamily: 'Inter_500Medium' },
 
   statsRow: { flexDirection: 'row', borderRadius: 14, borderWidth: StyleSheet.hairlineWidth, marginBottom: 16, overflow: 'hidden' },
   statItem: { flex: 1, alignItems: 'center', paddingVertical: 14 },

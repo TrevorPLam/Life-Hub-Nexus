@@ -86,6 +86,7 @@ export default function EditProfileScreen() {
   // Local state mirrors
   const [name, setName] = useState(profile.name);
   const [username, setUsername] = useState(profile.username);
+  const [pronouns, setPronouns] = useState(profile.pronouns);
   const [bio, setBio] = useState(profile.bio);
   const [about, setAbout] = useState(profile.about);
   const [birthday, setBirthday] = useState(profile.birthday);
@@ -94,16 +95,23 @@ export default function EditProfileScreen() {
   const [website, setWebsite] = useState(profile.website);
   const [phone, setPhone] = useState(profile.phone);
   const [email, setEmail] = useState(profile.email);
+  const [socialTwitter, setSocialTwitter] = useState(profile.socialTwitter);
+  const [socialInstagram, setSocialInstagram] = useState(profile.socialInstagram);
+  const [socialLinkedin, setSocialLinkedin] = useState(profile.socialLinkedin);
 
   // Local privacy state (so changes are previewed live before saving)
   const [privacy, setPrivacy] = useState({ ...profile.privacy });
 
   const isDirty =
     name !== profile.name || username !== profile.username ||
+    pronouns !== profile.pronouns ||
     bio !== profile.bio || about !== profile.about ||
     birthday !== profile.birthday || location !== profile.location ||
     occupation !== profile.occupation || website !== profile.website ||
     phone !== profile.phone || email !== profile.email ||
+    socialTwitter !== profile.socialTwitter ||
+    socialInstagram !== profile.socialInstagram ||
+    socialLinkedin !== profile.socialLinkedin ||
     JSON.stringify(privacy) !== JSON.stringify(profile.privacy);
 
   const handleSave = useCallback(() => {
@@ -111,7 +119,22 @@ export default function EditProfileScreen() {
       Alert.alert('Name required', 'Please enter at least a display name.');
       return;
     }
-    updateProfile({ name: name.trim(), username: username.trim().replace('@', ''), bio, about, birthday, location, occupation, website, phone, email });
+    updateProfile({
+      name: name.trim(),
+      username: username.trim().replace('@', ''),
+      pronouns,
+      bio,
+      about,
+      birthday,
+      location,
+      occupation,
+      website,
+      phone,
+      email,
+      socialTwitter: socialTwitter.replace(/^@/, ''),
+      socialInstagram: socialInstagram.replace(/^@/, ''),
+      socialLinkedin,
+    });
     // Save all privacy levels
     (Object.keys(privacy) as PrivacyField[]).forEach(field => {
       if (privacy[field] !== profile.privacy[field]) {
@@ -120,7 +143,7 @@ export default function EditProfileScreen() {
     });
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     router.back();
-  }, [name, username, bio, about, birthday, location, occupation, website, phone, email, privacy]);
+  }, [name, username, pronouns, bio, about, birthday, location, occupation, website, phone, email, socialTwitter, socialInstagram, socialLinkedin, privacy]);
 
   const cycleField = useCallback((field: PrivacyField) => {
     setPrivacy(prev => ({ ...prev, [field]: cyclePrivacy(prev[field]) }));
@@ -195,6 +218,15 @@ export default function EditProfileScreen() {
               hint="Letters, numbers, _ and . only"
             />
             <FieldRow
+              label="Pronouns"
+              value={pronouns}
+              onChangeText={setPronouns}
+              placeholder="e.g. she/her, he/him, they/them"
+              privacyField="pronouns"
+              privacy={privacy.pronouns}
+              onCyclePrivacy={() => cycleField('pronouns')}
+            />
+            <FieldRow
               label="Bio"
               value={bio}
               onChangeText={setBio}
@@ -257,6 +289,40 @@ export default function EditProfileScreen() {
               privacyField="occupation"
               privacy={privacy.occupation}
               onCyclePrivacy={() => cycleField('occupation')}
+              isLast
+            />
+          </View>
+        </View>
+
+        {/* ─── SOCIAL LINKS ─── */}
+        <View style={styles.sectionBlock}>
+          <SectionHeader title="Social" subtitle="Your online presence" icon="at-sign" color={colors.social} />
+          <View style={[styles.fieldCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            <FieldRow
+              label="X / Twitter"
+              value={socialTwitter}
+              onChangeText={setSocialTwitter}
+              placeholder="@handle"
+              autoCapitalize="none"
+              privacyField="socialLinks"
+              privacy={privacy.socialLinks}
+              onCyclePrivacy={() => cycleField('socialLinks')}
+            />
+            <FieldRow
+              label="Instagram"
+              value={socialInstagram}
+              onChangeText={setSocialInstagram}
+              placeholder="@handle"
+              autoCapitalize="none"
+            />
+            <FieldRow
+              label="LinkedIn"
+              value={socialLinkedin}
+              onChangeText={setSocialLinkedin}
+              placeholder="linkedin.com/in/yourname"
+              autoCapitalize="none"
+              keyboardType="url"
+              hint="One privacy setting controls all social links"
               isLast
             />
           </View>

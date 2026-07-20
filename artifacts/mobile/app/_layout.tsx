@@ -11,10 +11,10 @@ import {
   Inter_700Bold,
   useFonts,
 } from '@expo-google-fonts/inter';
-import { Stack } from 'expo-router';
+import { Stack, router, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 
-import { AppProvider } from '@/context/AppContext';
+import { AppProvider, useApp } from '@/context/AppContext';
 import { WorkProvider } from '@/context/WorkContext';
 import { CalendarProvider } from '@/context/CalendarContext';
 import { NotesProvider } from '@/context/NotesContext';
@@ -27,9 +27,32 @@ SplashScreen.preventAutoHideAsync();
 const queryClient = new QueryClient();
 
 function RootLayoutNav() {
+  const { profile, hydrated } = useApp();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    // Wait until AsyncStorage has been read before making any routing decisions
+    if (!hydrated) return;
+
+    const onSetup = pathname === '/profile/setup';
+
+    if (!profile.onboarded && !onSetup) {
+      // New user — send to setup
+      router.replace('/profile/setup');
+    } else if (profile.onboarded && onSetup) {
+      // Already onboarded but somehow landed on setup — go home
+      router.replace('/(tabs)');
+    }
+  }, [hydrated, profile.onboarded, pathname]);
+
   return (
     <Stack screenOptions={{ headerBackTitle: 'Back' }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+
+      {/* Profile screens */}
+      <Stack.Screen name="profile/setup" options={{ headerShown: false, gestureEnabled: false }} />
+      <Stack.Screen name="profile/index" options={{ headerShown: false }} />
+      <Stack.Screen name="profile/edit" options={{ headerShown: false, presentation: 'modal' }} />
 
       {/* Work screens */}
       <Stack.Screen name="work/[id]" options={{ title: 'Task', headerBackTitle: 'Work' }} />

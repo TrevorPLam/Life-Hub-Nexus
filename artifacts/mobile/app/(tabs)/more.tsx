@@ -63,8 +63,8 @@ export default function MoreScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingBottom: Platform.OS === 'web' ? 100 : 120 }]}>
 
         {/* Profile card */}
-        <TouchableOpacity style={[styles.profileCard, { backgroundColor: `${colors.primary}15`, borderColor: `${colors.primary}30` }]} onPress={() => router.push('/social')}>
-          <Avatar name={profile.name} color={colors.primary} size={50} />
+        <TouchableOpacity style={[styles.profileCard, { backgroundColor: `${colors.primary}15`, borderColor: `${colors.primary}30` }]} onPress={() => router.push('/profile')}>
+          <Avatar name={profile.name || 'You'} color={profile.avatarColor} size={50} />
           <View style={styles.profileInfo}>
             <Text style={[styles.profileName, { color: colors.foreground }]}>{profile.name}</Text>
             <Text style={[styles.profileBio, { color: colors.mutedForeground }]}>{profile.bio || 'Living intentionally.'}</Text>
@@ -103,12 +103,14 @@ export default function MoreScreen() {
 
         <View style={[styles.settingsGroup, { backgroundColor: colors.card, borderColor: colors.border }]}>
           {[
-            { icon: 'user', label: 'Profile', color: colors.primary },
-            { icon: 'bell', label: 'Notifications', color: colors.calendar },
-            { icon: 'moon', label: 'Appearance', color: colors.people },
-            { icon: 'shield', label: 'Privacy', color: colors.budget },
+            { icon: 'user', label: 'Profile', color: colors.primary, route: '/profile' },
+            { icon: 'shield', label: 'Privacy', color: colors.budget, route: '/profile/edit' },
           ].map((item, i, arr) => (
-            <TouchableOpacity key={item.label} style={[styles.settingRow, i < arr.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}>
+            <TouchableOpacity
+              key={item.label}
+              onPress={() => router.push(item.route as any)}
+              style={[styles.settingRow, i < arr.length - 1 && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border }]}
+            >
               <View style={[styles.settingIcon, { backgroundColor: `${item.color}15` }]}>
                 <Feather name={item.icon as any} size={16} color={item.color} />
               </View>

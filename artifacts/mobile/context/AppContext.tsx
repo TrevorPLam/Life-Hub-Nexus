@@ -14,6 +14,8 @@ export interface ProfilePrivacy {
   phone: PrivacyLevel;
   email: PrivacyLevel;
   about: PrivacyLevel;
+  pronouns: PrivacyLevel;
+  socialLinks: PrivacyLevel;
 }
 
 export interface AppProfile {
@@ -21,6 +23,7 @@ export interface AppProfile {
   name: string;
   username: string;
   avatarColor: string;
+  pronouns: string;      // e.g. "she/her", "he/him", "they/them"
 
   // Personal data
   bio: string;           // short tagline
@@ -31,6 +34,11 @@ export interface AppProfile {
   website: string;
   phone: string;
   email: string;
+
+  // Social links
+  socialTwitter: string;
+  socialInstagram: string;
+  socialLinkedin: string;
 
   // Internals
   onboarded: boolean;
@@ -46,12 +54,15 @@ const DEFAULT_PRIVACY: ProfilePrivacy = {
   phone: 'private',
   email: 'private',
   about: 'public',
+  pronouns: 'public',
+  socialLinks: 'public',
 };
 
 const DEFAULT_PROFILE: AppProfile = {
-  name: 'Friend',
+  name: '',
   username: '',
   avatarColor: '#6366F1',
+  pronouns: '',
   bio: '',
   about: '',
   birthday: '',
@@ -60,12 +71,16 @@ const DEFAULT_PROFILE: AppProfile = {
   website: '',
   phone: '',
   email: '',
-  onboarded: true,
+  socialTwitter: '',
+  socialInstagram: '',
+  socialLinkedin: '',
+  onboarded: false,
   privacy: DEFAULT_PRIVACY,
 };
 
 interface AppContextValue {
   profile: AppProfile;
+  hydrated: boolean;  // true once AsyncStorage has been read
   updateProfile: (updates: Partial<AppProfile>) => void;
   updatePrivacy: (field: keyof ProfilePrivacy, level: PrivacyLevel) => void;
   greeting: string;
@@ -82,6 +97,7 @@ function getGreeting(name: string): string {
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<AppProfile>(DEFAULT_PROFILE);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then(raw => {
@@ -96,6 +112,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           }));
         } catch {}
       }
+      // Mark hydrated whether or not we found saved data
+      setHydrated(true);
     });
   }, []);
 
@@ -118,7 +136,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const greeting = getGreeting(profile.name);
 
   return (
-    <AppContext.Provider value={{ profile, updateProfile, updatePrivacy, greeting }}>
+    <AppContext.Provider value={{ profile, hydrated, updateProfile, updatePrivacy, greeting }}>
       {children}
     </AppContext.Provider>
   );
