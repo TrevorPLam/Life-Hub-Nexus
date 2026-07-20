@@ -67,7 +67,7 @@ pnpm --filter @workspace/api-server test -- --runInBand
 
 ---
 
-## [ ] T-011 | STATUS: TODO | Define bounded contexts and module dependency rules
+## [x] T-011 | STATUS: DONE | Define bounded contexts and module dependency rules
 
 **Purpose:** Establish stable ownership boundaries before additional life-operation modules are implemented.
 
@@ -97,10 +97,10 @@ pnpm run typecheck
 
 ### Subtasks
 
-- [ ] T-011.01 | AGENT | Target: `artifacts/mobile/app/_layout.tsx`, `artifacts/mobile/context/`, `artifacts/mobile/domain/` | Map current ownership of profile, tasks, calendar, notes, people, finance, social, references, persistence, and navigation. Identify all direct cross-context imports and all storage keys.
-- [ ] T-011.02 | AGENT | Target: `docs/architecture/context-map.md` | Create the context map covering Identity, Profile, Planning, Calendar, Knowledge, People, Finance, Relationships, Notifications, Sync, and Search. For each context state owned data, inbound/outbound contracts, deletion policy, and whether it is local-only or syncable.
-- [ ] T-011.03 | AGENT | Target: `docs/architecture/context-map.md`, `replit.md` | Define module dependency rules: presentation depends on application/domain contracts; application depends on domain and repository interfaces; data adapters implement repository interfaces; domain never imports React, Expo, AsyncStorage, or Express.
-- [ ] T-011.04 | AGENT | Target: `TODO.md`, `replit.md` | Verify that the documented map matches actual imports found during research. Record exceptions as explicit migration debt and mark T-011 complete.
+- [x] T-011.01 | AGENT | Target: `artifacts/mobile/app/_layout.tsx`, `artifacts/mobile/context/`, `artifacts/mobile/domain/` | Mapped current ownership of profile, tasks, calendar, notes, people, finance, social, references, persistence, and navigation. Identified all direct cross-context imports and storage keys: `@lifeos/profile`, `@lifeos/tasks`, `@lifeos/events`, `@lifeos/notes`, `@lifeos/people`, `@lifeos/budget`, `@lifeos/budget_limits`, `@lifeos/social`.
+- [x] T-011.02 | AGENT | Target: `docs/architecture/context-map.md` | Created `docs/architecture/context-map.md` covering Identity, Profile, Planning, Calendar, Knowledge, People, Finance, Relationships, Notifications, Sync, and Search. Each context includes owned data, inbound/outbound contracts, deletion policy, and local/sync status.
+- [x] T-011.03 | AGENT | Target: `docs/architecture/context-map.md`, `replit.md` | Defined module dependency rules for mobile and API server layering in `docs/architecture/context-map.md` and referenced them in `replit.md` architecture decisions. Presentation depends on Application/Domain; Application depends on Domain and repository interfaces; Data adapters implement repository interfaces; Domain never imports React, Expo, AsyncStorage, or Express.
+- [x] T-011.04 | AGENT | Target: `TODO.md`, `replit.md` | Verified the map against actual imports and storage keys. Recorded exceptions as migration debt in `docs/architecture/context-map.md` (e.g. `domain/references` importing context types, contexts using `AsyncStorage` directly, mock profile route, missing Identity/Search/Notifications modules). Marked T-011 complete.
 
 ---
 
@@ -460,4 +460,4 @@ YYYY-MM-DD | TASK-ID | commands run | result | follow-up or none
 ```
 
 - 2026-07-20 | T-010 | `pnpm run typecheck` (passed), `pnpm --filter @workspace/mobile test -- --runInBand` (17/17 passed), `pnpm --filter @workspace/api-server test -- --runInBand` (10/10 passed), `pnpm --filter @workspace/mobile exec node --test server/serve.test.js` (12/12 passed), `pnpm --filter @workspace/api-spec run codegen` (Orval 8.21.0, generated code matched tracked files) | DONE | Verified README.md, replit.md, and TODO.md updated with baseline facts. Next: T-011.
-- No tasks in this backlog have been completed yet.
+- 2026-07-20 | T-011 | `pnpm run typecheck` (passed) | DONE | Created `docs/architecture/context-map.md` with all 12 bounded contexts, dependency rules, provider policy, and migration debt table. Updated `replit.md` with context map pointer and module dependency rules. No production imports/exports changed.

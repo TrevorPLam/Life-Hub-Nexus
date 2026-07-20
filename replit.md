@@ -55,6 +55,9 @@ A local-first, modular life-operations mobile app and API monolith. Currently at
 - **Profile migration:** Versioned DTO with automatic migration from legacy format (no version field) to current versioned structure
 - **Error observability:** Repository returns discriminated union results (success/error) that UI can react to, with recoverable outcomes for invalid data
 - **Mobile preview server security:** Secure adapter boundary with HTML encoding, trusted origin validation, path traversal protection, and SRI for external scripts. Server validates host headers against optional allowlist (TRUSTED_ORIGINS env var), encodes all template values, serves local QR library with integrity hash, and adds security headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy).
+- **Bounded context map:** All Life Hub Nexus bounded contexts, their owned data, public contracts, deletion policies, and migration debt are documented in `docs/architecture/context-map.md`.
+- **Module dependency rules (mobile):** Presentation depends on Application/Domain contracts; Application depends on Domain and repository interfaces; Infrastructure adapters implement repository interfaces; Domain never imports React, Expo, AsyncStorage, or Express. See `docs/architecture/context-map.md` for the full dependency rules and current exceptions.
+- **Module dependency rules (API server):** HTTP routes depend on Application use cases; Application use cases receive `AuthenticatedActor` and call repository interfaces; Domain is database-agnostic; only Data adapters import Drizzle schemas or generated SQL.
 - **Profile sync bounded contexts:**
   - **Identity context:** Owns user authentication (email/password), session management, and user ID generation. Responsible for validating credentials and issuing auth tokens.
   - **Profile context:** Owns profile data model, validation rules, and business logic. Manages profile CRUD operations scoped to authenticated user ID.
@@ -87,4 +90,5 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Pointers
 
+- See `docs/architecture/context-map.md` for the full bounded-context map, dependency rules, and tracked migration debt.
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
