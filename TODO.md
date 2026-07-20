@@ -255,7 +255,7 @@ pnpm --filter @workspace/mobile run typecheck
 
 ---
 
-## [ ] T-007 | STATUS: TODO | Add a focused test and quality gate foundation
+## [x] T-007 | STATUS: DONE | Add a focused test and quality gate foundation
 
 **Purpose:** Establish the smallest repeatable automated feedback loop for domain and API behavior.
 
@@ -287,11 +287,11 @@ pnpm run typecheck
 
 ### Subtasks
 
-- [ ] T-007.01 | AGENT | Target: `artifacts/mobile/package.json`, `artifacts/api-server/package.json`, `pnpm-lock.yaml` | Research Expo 54, React Native 0.81, Express 5, and Node compatibility in the existing lockfile. Verify Jest is the minimal compatible common runner for the focused commands in this backlog; do not add multiple competing frameworks.
-- [ ] T-007.02 | AGENT | Target: `artifacts/mobile/`, `artifacts/api-server/` | Add test scripts and focused configuration for mobile pure TypeScript domain modules and Express route tests. Avoid changing runtime application entry points.
-- [ ] T-007.03 | AGENT | Target: `artifacts/mobile/__tests__/`, `artifacts/api-server/src/**/*.test.ts` | Add deterministic test factories/fakes and one representative passing test per runtime to prove the harness operates correctly.
-- [ ] T-007.04 | AGENT | Target: `.github/workflows/quality.yml` | Add a non-mutating CI workflow that installs with the lockfile, runs typecheck, and runs the two test commands. Do not include database push or deployment commands.
-- [ ] T-007.05 | AGENT | Target: `replit.md`, `TODO.md` | Document focused-test conventions and CI commands. Run the exact commands listed above and record results.
+- [x] T-007.01 | AGENT | Target: `artifacts/mobile/package.json`, `artifacts/api-server/package.json`, `pnpm-lock.yaml` | Research Expo 54, React Native 0.81, Express 5, and Node compatibility in the existing lockfile. Verify Jest is the minimal compatible common runner for the focused commands in this backlog; do not add multiple competing frameworks.
+- [x] T-007.02 | AGENT | Target: `artifacts/mobile/`, `artifacts/api-server/` | Add test scripts and focused configuration for mobile pure TypeScript domain modules and Express route tests. Avoid changing runtime application entry points.
+- [x] T-007.03 | AGENT | Target: `artifacts/mobile/__tests__/`, `artifacts/api-server/src/**/*.test.ts` | Add deterministic test factories/fakes and one representative passing test per runtime to prove the harness operates correctly.
+- [x] T-007.04 | AGENT | Target: `.github/workflows/quality.yml` | Add a non-mutating CI workflow that installs with the lockfile, runs typecheck, and runs the two test commands. Do not include database push or deployment commands.
+- [x] T-007.05 | AGENT | Target: `replit.md`, `TODO.md` | Document focused-test conventions and CI commands. Run the exact commands listed above and record results.
 
 ---
 
@@ -334,7 +334,38 @@ pnpm --filter @workspace/mobile run build
 
 ---
 
+## [ ] T-009 | STATUS: TODO | Fix pre-existing typecheck errors
+
+**Purpose:** Resolve TypeScript compilation errors that existed before T-007 implementation.
+
+**Related file paths:** `artifacts/mockup-sandbox/src/`, `artifacts/mobile/hooks/useColors.ts`.
+
+**Definition of done:** All typecheck commands pass without errors across all packages.
+
+**Out of scope:** Changing application behavior or adding new features.
+
+**Rules to follow:** Fix only the type errors, preserve existing functionality.
+
+**Depends on:** None.
+
+**Blocks:** Reliable typecheck verification for all tasks.
+
+**Targeted validation commands:**
+
+```powershell
+pnpm run typecheck
+```
+
+### Subtasks
+
+- [ ] T-009.01 | AGENT | Target: `artifacts/mockup-sandbox/src/` | Fix React type conflicts in UI components (spinner.tsx, calendar.tsx).
+- [ ] T-009.02 | AGENT | Target: `artifacts/mobile/hooks/useColors.ts` | Fix type conversion error in colors type assertion.
+- [ ] T-009.03 | AGENT | Target: `TODO.md` | Run full typecheck and record results.
+
+---
+
 ## Completion Notes
 
 - **Task completion record format:** `YYYY-MM-DD | TASK-ID | commands run | result | follow-up or none`.
-- **Current record:** No implementation tasks have been executed from this backlog.
+- **Current record:** 
+  - 2026-07-19 | T-007 | Test foundation | DONE | Added Jest 29.7 with ts-jest to mobile and api-server packages. Created jest.config.cjs files for both (ES module compatibility). Added test scripts and @types/jest dependencies. Created example test files with deterministic factories. Added GitHub Actions quality workflow. Documented testing conventions in replit.md. Mobile tests pass (2/2). API server tests pass (2/2). Pre-existing typecheck errors in mockup-sandbox and mobile (useColors.ts) exist outside task scope - added as separate issue.

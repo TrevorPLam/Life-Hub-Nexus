@@ -9,6 +9,8 @@ _Replace the heading above with the project's name, and this line with one sente
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
+- `pnpm --filter @workspace/mobile test -- --runInBand` — run mobile pure-domain tests
+- `pnpm --filter @workspace/api-server test -- --runInBand` — run API server route tests
 - Required env: `DATABASE_URL` — Postgres connection string
 
 ## Platform Support
@@ -16,6 +18,15 @@ _Replace the heading above with the project's name, and this line with one sente
 - **Windows PowerShell:** All commands work natively; preinstall script uses Node.js for pnpm enforcement
 - **Linux/Replit:** All commands work natively; post-merge hook runs dependency installation only
 - **Database updates:** Must be run explicitly via `pnpm --filter @workspace/db run push` - not automated during merge
+
+## Testing Conventions
+
+- **Test runner:** Jest 29.7 with ts-jest for TypeScript support
+- **Mobile tests:** Pure domain logic in `artifacts/mobile/__tests__/**/*.test.ts` - no React/AsyncStorage dependencies
+- **API tests:** Route tests in `artifacts/api-server/src/**/*.test.ts` - use deterministic factories
+- **Configuration:** Jest configs are `.cjs` files to support ES module packages
+- **Exclusions:** Test files are excluded from TypeScript compilation (handled by Jest)
+- **CI:** GitHub Actions workflow installs with frozen lockfile, runs typecheck, then runs both test suites
 
 ## Stack
 

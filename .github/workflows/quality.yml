@@ -1,0 +1,38 @@
+name: Quality
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      
+      - name: Run typecheck
+        run: pnpm run typecheck
+      
+      - name: Run mobile tests
+        run: pnpm --filter @workspace/mobile test -- --runInBand
+      
+      - name: Run API server tests
+        run: pnpm --filter @workspace/api-server test -- --runInBand
