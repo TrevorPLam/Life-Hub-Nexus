@@ -295,7 +295,7 @@ pnpm --filter @workspace/api-server run typecheck
 
 ---
 
-## [ ] T-017 | STATUS: TODO | Implement the profile application and persistence boundary
+## [!] T-017 | STATUS: BLOCKED | Implement the profile application and persistence boundary
 
 **Purpose:** Create an ownership-scoped profile repository port, use cases, and Drizzle adapter without changing HTTP or mobile transport code.
 
@@ -330,6 +330,8 @@ pnpm --filter @workspace/api-server run typecheck
 - [ ] T-017.02 | AGENT | Target: `artifacts/api-server/src/application/profile/profile.test.ts` | Write failing Given/When/Then application tests for owner-scoped retrieval, update, actor isolation, invalid update rejection, conflict response, deletion, and post-deletion retrieval.
 - [ ] T-017.03 | AGENT | Target: `artifacts/api-server/src/application/profile/`, `artifacts/api-server/src/data/profile/`, `lib/db/` | Implement the repository port, profile use cases, Drizzle adapter, and versioned migration generation workflow. Do not register HTTP routes or execute database mutation.
 - [ ] T-017.04 | AGENT | Target: `replit.md`, `TODO.md` | Document the profile application boundary, migration artifact, and unimplemented transport layer. Run focused tests and API typecheck before marking complete.
+
+**Blocker note:** T-017 is blocked because `Depends on: T-016` and T-016.02 requires a HUMAN identity-provider selection. `docs/architecture/identity-decision.md` remains in Draft status with no provider or non-secret configuration supplied, and `.env.example` still contains placeholder values. The `AuthenticatedActor` port from T-015 is already sufficient to implement the profile use cases and Drizzle adapter; if the dependency is relaxed, T-017 can proceed using the test/placeholder verifier. Until T-016 is closed, T-018 and T-019 are transitively blocked.
 
 ---
 
