@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -9,10 +8,10 @@ import { useWork } from '@/context/WorkContext';
 import { TaskItem } from '@/components/work/TaskItem';
 import { PriorityBadge, StatusBadge } from '@/components/ui/Tag';
 import { LinkedItems } from '@/components/ui/LinkedItems';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 
 export default function TaskDetailScreen() {
   const colors = useColors();
-  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getTask, updateTask, deleteTask, toggleComplete, getSubtasks, linkItem, unlinkItem, addTask } = useWork();
 
@@ -51,10 +50,15 @@ export default function TaskDetailScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  const topPad = Platform.OS === 'web' ? Math.max(insets.top, 67) : insets.top;
+  const deleteButton = (
+    <TouchableOpacity onPress={handleDelete} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+      <Feather name="trash-2" size={18} color={colors.destructive} />
+    </TouchableOpacity>
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <ScreenHeader title="Task" rightElement={deleteButton} />
       <KeyboardAvoidingView style={styles.kav} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingBottom: Platform.OS === 'web' ? 60 : 80 }]}>
 
@@ -66,9 +70,6 @@ export default function TaskDetailScreen() {
               <Text style={[styles.completeBtnText, { color: isDone ? colors.work : colors.mutedForeground }]}>
                 {isDone ? 'Completed' : 'Mark complete'}
               </Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={handleDelete} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <Feather name="trash-2" size={18} color={colors.destructive} />
             </TouchableOpacity>
           </View>
 
@@ -222,10 +223,10 @@ const styles = StyleSheet.create({
   divider: { height: StyleSheet.hairlineWidth, marginHorizontal: 14 },
   section: { marginBottom: 20 },
   sectionTitle: { fontSize: 15, fontFamily: 'Inter_600SemiBold', marginBottom: 10 },
-  descTap: { borderRadius: 10, borderWidth: StyleSheet.hairlineWidth, padding: 14, minHeight: 80 },
+  descTap: { borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, padding: 14, minHeight: 80 },
   descText: { fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 20 },
-  descInput: { borderRadius: 10, borderWidth: 1, padding: 14, minHeight: 100, fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 20 },
-  subtaskList: { borderRadius: 10, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden', marginBottom: 8 },
-  addSubtaskRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 10, borderWidth: StyleSheet.hairlineWidth },
+  descInput: { borderRadius: 12, borderWidth: 1, padding: 14, minHeight: 100, fontSize: 14, fontFamily: 'Inter_400Regular', lineHeight: 20 },
+  subtaskList: { borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, overflow: 'hidden', marginBottom: 8 },
+  addSubtaskRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 12, borderWidth: StyleSheet.hairlineWidth },
   addSubtaskInput: { flex: 1, fontSize: 14, fontFamily: 'Inter_400Regular', padding: 0 },
 });

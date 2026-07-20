@@ -3,6 +3,7 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, Te
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
+
 import { useColors } from '@/hooks/useColors';
 import { useNotes } from '@/context/NotesContext';
 import { LinkedItems } from '@/components/ui/LinkedItems';
@@ -48,12 +49,16 @@ export default function NoteEditorScreen() {
   };
 
   const bottomPad = Platform.OS === 'web' ? 34 : insets.bottom;
+  const topPad = Platform.OS === 'web' ? Math.max(insets.top, 67) : insets.top;
 
   return (
     <KeyboardAvoidingView style={[styles.container, { backgroundColor: colors.background }]} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}>
       {/* Toolbar */}
-      <View style={[styles.toolbar, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+      <View style={[styles.toolbar, { paddingTop: topPad + 8, backgroundColor: colors.background, borderBottomColor: colors.border }]}>
         <View style={styles.toolbarLeft}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Feather name="arrow-left" size={22} color={colors.foreground} />
+          </TouchableOpacity>
           <TouchableOpacity onPress={handleSave} style={[styles.saveBtn, { backgroundColor: isSaved ? colors.muted : colors.notes }]}>
             <Text style={[styles.saveBtnText, { color: isSaved ? colors.mutedForeground : '#fff' }]}>{isSaved ? 'Saved' : 'Save'}</Text>
           </TouchableOpacity>
@@ -122,8 +127,9 @@ export default function NoteEditorScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  toolbar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
-  toolbarLeft: {},
+  toolbar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingBottom: 10, borderBottomWidth: StyleSheet.hairlineWidth },
+  toolbarLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  backBtn: {},
   toolbarRight: { flexDirection: 'row', alignItems: 'center', gap: 18 },
   saveBtn: { paddingHorizontal: 16, paddingVertical: 7, borderRadius: 16 },
   saveBtnText: { fontSize: 13, fontFamily: 'Inter_600SemiBold' },
