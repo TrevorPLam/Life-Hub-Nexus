@@ -113,13 +113,14 @@ When an entity is deleted:
 
 ### 4.3 Current behavior vs target behavior
 
-Current behavior (verified by `artifacts/mobile/__tests__/entity-reference-policy.test.ts`):
+Current behavior after T-014 (verified by `artifacts/mobile/__tests__/entity-reference-policy.test.ts` and `artifacts/mobile/__tests__/reference-cleanup-service.test.ts`):
 
-- `EntityReferencePolicy` removes the deleted entity id from all inbound `linked*Ids` arrays.
-- `ReferenceCleanupService` reads from `AsyncStorage`, applies the policy, and writes updated collections back.
-- `ReferenceCleanupOrchestrator` exists but is not imported by any production code.
+- `EntityReferencePolicy` operates on feature-neutral `TaskDto`, `EventDto`, `NoteDto`, `PersonDto`, and `TransactionDto` DTOs and removes the deleted entity id from all inbound `linked*Ids` arrays.
+- `ReferenceCleanupService` coordinates cleanup through a `ReferenceCollectionStore` port. The default implementation is `createAsyncStorageReferenceCollectionStore`, an anti-corruption layer that validates each stored shape before passing it to the policy.
+- Cleanup functions return a discriminated `CleanupResult` (`success` or `storage-error` / `invalid-data`) instead of swallowing failures.
+- `ReferenceCleanupOrchestrator` has been removed; it was dead code.
 
-Target behavior after T-014/T-016:
+Target behavior after T-016:
 
 - `RelationshipPolicy` removes relationships where the deleted entity is source or target.
 - Feature contexts project those relationships into their own `linked*Ids` arrays on read.
@@ -265,13 +266,13 @@ Rules:
 
 ## 9. Mismatch between specified and current behavior
 
-The following discrepancies were found during T-013 and must be addressed in T-014:
+The following discrepancies were found during T-013 and addressed in T-014:
 
-1. **`ReferenceCleanupService` loads notes from the budget storage key.** The code calls `safeParse<{ notes: Note[]; folders: any[] }>(budgetRaw, ...)` where `budgetRaw` is the transactions array. Because arrays have no `notes` property, the expression falls back to `notesRaw` only when `budgetRaw` is an array. When `budgetRaw` is `null` (first run), `budget.notes` is an empty array (truthy), so the actual notes store is ignored. This is a data-loss risk and violates the planned Local Device Cache boundary.
-2. **`ReferenceCleanupService` and `EntityReferencePolicy` import feature entity types from React context files.** This violates the mobile layering rule that domain code must not import React contexts.
-3. **`ReferenceCleanupOrchestrator` is not imported anywhere.** It appears to be dead code and should either be removed or aligned with the new repository contract in T-014.
-4. **`ReferenceCleanupService` swallows parsing errors by returning default values.** Malformed stored data should be reported as a recoverable failure, not silently replaced with an empty default.
-5. **Cleanup writes are not atomic.** A crash between writes may leave some `linked*Ids` arrays updated and others stale.
+1. ~~`ReferenceCleanupService` loads notes from the budget storage key.~~ Fixed: the adapter now reads notes from `@lifeos/notes` as `{ notes, folders }` and transactions from `@lifeos/budget` as a raw array. Notes folders are preserved on write.
+2. ~~`ReferenceCleanupService` and `EntityReferencePolicy` import feature entity types from React context files.~~ Fixed: the policy now uses feature-neutral DTOs and the service's `ReferenceCollectionStore` port depends only on those DTOs.
+3. ~~`ReferenceCleanupOrchestrator` is not imported anywhere.~~ Fixed: the file was removed as dead code.
+4. ~~`ReferenceCleanupService` swallows parsing errors by returning default values.~~ Fixed: the adapter validates stored shapes and returns a recoverable `invalid-data` or `storage-error` `CleanupResult`.
+5. **Cleanup writes are not atomic.** Remaining known limitation: each updated collection is written with a separate `AsyncStorage.setItem` call. A crash between writes may leave some `linked*Ids` arrays updated and others stale. A future SQLite-backed `ReferenceCollectionStore` can wrap the entire cleanup in a single transaction.
 
 ## 10. References
 

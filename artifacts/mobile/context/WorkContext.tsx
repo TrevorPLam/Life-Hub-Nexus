@@ -164,7 +164,10 @@ export function WorkProvider({ children }: { children: React.ReactNode }) {
     // Clean up references in other contexts
     try {
       const { cleanupTaskReferences } = await import('../domain/references/ReferenceCleanupService');
-      await cleanupTaskReferences(id);
+      const result = await cleanupTaskReferences(id);
+      if (!result.success) {
+        console.error('Failed to cleanup task references:', result.error.message);
+      }
     } catch (error) {
       console.error('Failed to cleanup task references:', error);
     }

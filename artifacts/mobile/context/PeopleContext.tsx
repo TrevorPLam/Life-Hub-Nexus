@@ -152,7 +152,10 @@ export function PeopleProvider({ children }: { children: React.ReactNode }) {
     // Clean up references in other contexts
     try {
       const { cleanupPersonReferences } = await import('../domain/references/ReferenceCleanupService');
-      await cleanupPersonReferences(id);
+      const result = await cleanupPersonReferences(id);
+      if (!result.success) {
+        console.error('Failed to cleanup person references:', result.error.message);
+      }
     } catch (error) {
       console.error('Failed to cleanup person references:', error);
     }

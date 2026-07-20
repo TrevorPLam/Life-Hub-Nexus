@@ -185,7 +185,10 @@ export function CalendarProvider({ children }: { children: React.ReactNode }) {
     // Clean up references in other contexts
     try {
       const { cleanupEventReferences } = await import('../domain/references/ReferenceCleanupService');
-      await cleanupEventReferences(id);
+      const result = await cleanupEventReferences(id);
+      if (!result.success) {
+        console.error('Failed to cleanup event references:', result.error.message);
+      }
     } catch (error) {
       console.error('Failed to cleanup event references:', error);
     }

@@ -181,7 +181,7 @@ pnpm run typecheck
 
 ---
 
-## [ ] T-014 | STATUS: TODO | Isolate existing relationship cleanup behind a tested boundary
+## [x] T-014 | STATUS: DONE | Isolate existing relationship cleanup behind a tested boundary
 
 **Purpose:** Remove direct imports from relationship domain code to React context modules and make current cleanup behavior observable before migrating storage technology.
 
@@ -212,10 +212,10 @@ pnpm --filter @workspace/mobile run typecheck
 
 ### Subtasks
 
-- [ ] T-014.01 | AGENT | Target: `artifacts/mobile/domain/references/`, listed context files, existing tests | Analyze storage shapes and cleanup call sites. Confirm the current budget, notes, events, people, and task serialization formats before writing tests. Use the mismatches documented in `docs/architecture/relationships.md` section 9 as the initial defect list.
-- [ ] T-014.02 | AGENT | Target: `artifacts/mobile/__tests__/reference-cleanup-service.test.ts` | Write failing Given/When/Then tests for task, event, note, person, and transaction deletion. Assert that the correct storage collection changes, unrelated collections are preserved, malformed data returns a recoverable failure, and no context import is required.
-- [ ] T-014.03 | AGENT | Target: `artifacts/mobile/domain/references/EntityReferencePolicy.ts`, `artifacts/mobile/domain/references/ReferenceCleanupService.ts` | Refactor policy types into feature-neutral DTOs and introduce a small persistence port. Implement an AsyncStorage adapter that validates each stored shape and returns typed outcomes.
-- [ ] T-014.04 | AGENT | Target: `artifacts/mobile/context/`, `replit.md`, `TODO.md` | Update deletion callers to handle the structured result without direct persistence imports. Run only the focused tests and mobile typecheck. Document the temporary AsyncStorage boundary and remaining atomicity limitation.
+- [x] T-014.01 | AGENT | Target: `artifacts/mobile/domain/references/`, listed context files, existing tests | Analyze storage shapes and cleanup call sites. Confirm the current budget, notes, events, people, and task serialization formats before writing tests. Use the mismatches documented in `docs/architecture/relationships.md` section 9 as the initial defect list.
+- [x] T-014.02 | AGENT | Target: `artifacts/mobile/__tests__/reference-cleanup-service.test.ts` | Write failing Given/When/Then tests for task, event, note, person, and transaction deletion. Assert that the correct storage collection changes, unrelated collections are preserved, malformed data returns a recoverable failure, and no context import is required.
+- [x] T-014.03 | AGENT | Target: `artifacts/mobile/domain/references/EntityReferencePolicy.ts`, `artifacts/mobile/domain/references/ReferenceCleanupService.ts` | Refactor policy types into feature-neutral DTOs and introduce a small persistence port. Implement an AsyncStorage adapter that validates each stored shape and returns typed outcomes.
+- [x] T-014.04 | AGENT | Target: `artifacts/mobile/context/`, `replit.md`, `TODO.md` | Update deletion callers to handle the structured result without direct persistence imports. Run only the focused tests and mobile typecheck. Document the temporary AsyncStorage boundary and remaining atomicity limitation.
 
 ---
 
@@ -463,3 +463,4 @@ YYYY-MM-DD | TASK-ID | commands run | result | follow-up or none
 - 2026-07-20 | T-011 | `pnpm run typecheck` (passed) | DONE | Created `docs/architecture/context-map.md` with all 12 bounded contexts, dependency rules, provider policy, and migration debt table. Updated `replit.md` with context map pointer and module dependency rules. No production imports/exports changed.
 - 2026-07-20 | T-012 | `pnpm --filter @workspace/domain-core test -- --runInBand` (8/8 passed), `pnpm --filter @workspace/domain-core run typecheck` (passed), `pnpm run typecheck` (passed), `pnpm --filter @workspace/domain-core run build` (passed) | DONE | Created `@workspace/domain-core` with `EntityId` branding helpers, `Result<T,E>`, `Clock`/`IdGenerator` ports, and deterministic test adapters. Added project reference in root `tsconfig.json` and documented the package boundary in `replit.md`. No existing feature migrated.
 - 2026-07-20 | T-013 | `pnpm --filter @workspace/mobile exec jest --runInBand artifacts/mobile/__tests__/entity-reference-policy.test.ts` (10/10 passed), `pnpm run typecheck` (passed) | DONE | Created `docs/architecture/relationships.md` with relationship model, matrix of all `linked*Ids` fields, proposed `RelationshipRepository`/`RelationshipPolicy` contracts, deletion semantics, and current-vs-target mismatches. Added `replit.md` pointer. No production code changed.
+- 2026-07-20 | T-014 | `pnpm --filter @workspace/mobile exec jest --runInBand artifacts/mobile/__tests__/entity-reference-policy.test.ts artifacts/mobile/__tests__/reference-cleanup-service.test.ts` (19/19 passed), `pnpm --filter @workspace/mobile run typecheck` (passed) | DONE | Refactored `EntityReferencePolicy` to feature-neutral DTOs, introduced `ReferenceCollectionStore` port and `createAsyncStorageReferenceCollectionStore`, rewrote `ReferenceCleanupService` with shape validation and `CleanupResult`, updated all context deletion callers, removed dead `ReferenceCleanupOrchestrator.ts`, and added `reference-cleanup-service.test.ts`. Fixed notes-loaded-from-budget and notes-wrapper-overwrite bugs. Documented AsyncStorage boundary and remaining non-atomic write limitation in `replit.md` and `docs/architecture/relationships.md`. Follow-up: T-015.

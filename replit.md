@@ -48,6 +48,9 @@ A local-first, modular life-operations mobile app and API monolith. Currently at
 - **Profile persistence:** `artifacts/mobile/domain/profile/ProfileRepository.ts` - deep module with anti-corruption layer for AsyncStorage
 - **Profile context:** `artifacts/mobile/context/AppContext.tsx` - consumes repository, exposes load/save failure state
 - **Profile tests:** `artifacts/mobile/__tests__/profile-repository.test.ts` - Given/When/Then tests for repository behavior
+- **Relationship cleanup domain:** `artifacts/mobile/domain/references/EntityReferencePolicy.ts` - pure functions on feature-neutral DTOs
+- **Relationship cleanup adapter:** `artifacts/mobile/domain/references/ReferenceCleanupService.ts` - `ReferenceCollectionStore` port and `createAsyncStorageReferenceCollectionStore` anti-corruption layer
+- **Relationship cleanup tests:** `artifacts/mobile/__tests__/entity-reference-policy.test.ts` and `artifacts/mobile/__tests__/reference-cleanup-service.test.ts` - policy and adapter tests
 - **Shared domain primitives:** `lib/domain-core/src/index.ts` - runtime-neutral `EntityId` branding helpers, `Result<T,E>`, `Clock` and `IdGenerator` ports, plus deterministic test adapters (`createFixedClock`, `createSequenceIdGenerator`)
 
 ## Architecture decisions
@@ -55,6 +58,7 @@ A local-first, modular life-operations mobile app and API monolith. Currently at
 - **Profile persistence boundary:** Deep module pattern with anti-corruption layer - AsyncStorage details encapsulated in `ProfileRepository.ts`, exposing only domain types and result types
 - **Profile migration:** Versioned DTO with automatic migration from legacy format (no version field) to current versioned structure
 - **Error observability:** Repository returns discriminated union results (success/error) that UI can react to, with recoverable outcomes for invalid data
+- **Relationship cleanup boundary:** `ReferenceCleanupService` coordinates cleanup through a `ReferenceCollectionStore` port with a `createAsyncStorageReferenceCollectionStore` anti-corruption adapter; it validates every stored shape and returns `CleanupResult` (success / `invalid-data` / `storage-error`). The current AsyncStorage adapter is not transactional: each updated collection is written separately, so a crash between writes may leave `linked*Ids` arrays partially updated.
 - **Mobile preview server security:** Secure adapter boundary with HTML encoding, trusted origin validation, path traversal protection, and SRI for external scripts. Server validates host headers against optional allowlist (TRUSTED_ORIGINS env var), encodes all template values, serves local QR library with integrity hash, and adds security headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy).
 - **Bounded context map:** All Life Hub Nexus bounded contexts, their owned data, public contracts, deletion policies, and migration debt are documented in `docs/architecture/context-map.md`.
 - **Module dependency rules (mobile):** Presentation depends on Application/Domain contracts; Application depends on Domain and repository interfaces; Infrastructure adapters implement repository interfaces; Domain never imports React, Expo, AsyncStorage, or Express. See `docs/architecture/context-map.md` for the full dependency rules and current exceptions.

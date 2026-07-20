@@ -128,7 +128,10 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     // Clean up references in other contexts
     try {
       const { cleanupNoteReferences } = await import('../domain/references/ReferenceCleanupService');
-      await cleanupNoteReferences(id);
+      const result = await cleanupNoteReferences(id);
+      if (!result.success) {
+        console.error('Failed to cleanup note references:', result.error.message);
+      }
     } catch (error) {
       console.error('Failed to cleanup note references:', error);
     }

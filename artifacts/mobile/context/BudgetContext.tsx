@@ -146,7 +146,10 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     // Clean up references in other contexts
     try {
       const { cleanupTransactionReferences } = await import('../domain/references/ReferenceCleanupService');
-      await cleanupTransactionReferences(id);
+      const result = await cleanupTransactionReferences(id);
+      if (!result.success) {
+        console.error('Failed to cleanup transaction references:', result.error.message);
+      }
     } catch (error) {
       console.error('Failed to cleanup transaction references:', error);
     }

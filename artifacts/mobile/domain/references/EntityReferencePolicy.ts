@@ -1,57 +1,70 @@
-import { Task } from '../../context/WorkContext';
-import { CalendarEvent } from '../../context/CalendarContext';
-import { Note } from '../../context/NotesContext';
-import { Person } from '../../context/PeopleContext';
-import { Transaction } from '../../context/BudgetContext';
-
 /**
  * Entity Reference Policy
- * 
+ *
  * A domain service that enforces reference integrity across entity aggregates.
- * When an entity is deleted, this policy removes its ID from all inbound
- * linkedIds arrays in other entities, preventing orphan references.
- * 
+ * Operates on feature-neutral DTOs so it can be consumed by any persistence
+ * adapter without importing React contexts or storage details.
+ *
  * This follows DDD aggregate boundary principles:
  * - References are by identity only (IDs, not object references)
  * - Cleanup is eventual consistency across aggregates
  * - Each aggregate maintains its own consistency boundary
- * 
+ *
  * The policy is pure: it transforms input collections without side effects,
  * making it testable and predictable.
  */
 
-export interface TaskCollections {
-  tasks: Task[];
-  events: CalendarEvent[];
-  notes: Note[];
-  people: Person[];
-  transactions: Transaction[];
+export interface TaskDto {
+  id: string;
+  linkedEventIds: string[];
+  linkedNoteIds: string[];
+  linkedPersonIds: string[];
+  linkedTransactionIds: string[];
 }
 
-export interface EventCollections {
-  tasks: Task[];
-  events: CalendarEvent[];
-  people: Person[];
+export interface EventDto {
+  id: string;
+  linkedTaskIds: string[];
+  linkedPersonIds: string[];
 }
 
-export interface NoteCollections {
-  tasks: Task[];
-  notes: Note[];
-  people: Person[];
+export interface NoteDto {
+  id: string;
+  linkedTaskIds: string[];
+  linkedPersonIds: string[];
 }
 
-export interface PersonCollections {
-  tasks: Task[];
-  events: CalendarEvent[];
-  notes: Note[];
-  people: Person[];
-  transactions: Transaction[];
+export interface PersonDto {
+  id: string;
+  linkedTaskIds: string[];
+  linkedEventIds: string[];
+  linkedNoteIds: string[];
+  linkedTransactionIds: string[];
 }
 
-export interface TransactionCollections {
-  tasks: Task[];
-  transactions: Transaction[];
+export interface TransactionDto {
+  id: string;
+  linkedTaskIds: string[];
+  linkedPersonIds: string[];
 }
+
+export interface EntityCollections {
+  tasks: TaskDto[];
+  events: EventDto[];
+  notes: NoteDto[];
+  people: PersonDto[];
+  transactions: TransactionDto[];
+}
+
+export type TaskCollections = EntityCollections;
+
+export type EventCollections = Pick<EntityCollections, 'tasks' | 'events' | 'people'>;
+
+export type NoteCollections = Pick<EntityCollections, 'tasks' | 'notes' | 'people'>;
+
+export type PersonCollections = EntityCollections;
+
+export type TransactionCollections = Pick<EntityCollections, 'tasks' | 'transactions'>;
 
 /**
  * Removes a task ID from all inbound linked arrays across the system.

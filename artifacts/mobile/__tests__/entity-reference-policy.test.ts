@@ -1,46 +1,43 @@
-import { 
+import {
   cleanupReferencesOnTaskDelete,
   cleanupReferencesOnEventDelete,
   cleanupReferencesOnNoteDelete,
   cleanupReferencesOnPersonDelete,
   cleanupReferencesOnTransactionDelete,
+  TaskDto,
+  EventDto,
+  NoteDto,
+  PersonDto,
+  TransactionDto,
 } from '../domain/references/EntityReferencePolicy';
-import { Task } from '../context/WorkContext';
-import { CalendarEvent } from '../context/CalendarContext';
-import { Note } from '../context/NotesContext';
-import { Person } from '../context/PeopleContext';
-import { Transaction } from '../context/BudgetContext';
 
 describe('EntityReferencePolicy', () => {
   describe('Given a task is deleted', () => {
     it('When the task has inbound references, Then the task ID is removed from all linked arrays', () => {
-      // Given
       const taskId = 'task-1';
-      const tasks: Task[] = [
-        { id: 'task-2', title: 'Other Task', description: '', status: 'todo', priority: 'medium', subtaskIds: [], tags: [], linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [], createdAt: '' },
-        { id: 'task-3', title: 'Another Task', description: '', status: 'todo', priority: 'low', subtaskIds: [], tags: [], linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [], createdAt: '' },
+      const tasks: TaskDto[] = [
+        { id: 'task-2', linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [] },
+        { id: 'task-3', linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [] },
       ];
-      const events: CalendarEvent[] = [
-        { id: 'event-1', title: 'Event 1', description: '', startDate: '', endDate: '', allDay: false, color: '#000', recurrence: 'none', linkedTaskIds: [taskId], linkedPersonIds: [], createdAt: '' },
-        { id: 'event-2', title: 'Event 2', description: '', startDate: '', endDate: '', allDay: false, color: '#000', recurrence: 'none', linkedTaskIds: [], linkedPersonIds: [], createdAt: '' },
+      const events: EventDto[] = [
+        { id: 'event-1', linkedTaskIds: [taskId], linkedPersonIds: [] },
+        { id: 'event-2', linkedTaskIds: [], linkedPersonIds: [] },
       ];
-      const notes: Note[] = [
-        { id: 'note-1', title: 'Note 1', content: '', tags: [], linkedTaskIds: [taskId], linkedPersonIds: [], isPinned: false, createdAt: '', updatedAt: '' },
-        { id: 'note-2', title: 'Note 2', content: '', tags: [], linkedTaskIds: [], linkedPersonIds: [], isPinned: false, createdAt: '', updatedAt: '' },
+      const notes: NoteDto[] = [
+        { id: 'note-1', linkedTaskIds: [taskId], linkedPersonIds: [] },
+        { id: 'note-2', linkedTaskIds: [], linkedPersonIds: [] },
       ];
-      const people: Person[] = [
-        { id: 'person-1', name: 'Person 1', email: '', phone: '', birthday: '', company: '', role: '', notes: '', avatarColor: '#000', interactions: [], linkedTaskIds: [taskId], linkedEventIds: [], linkedNoteIds: [], stayInTouchDays: 0, lastInteractionDate: '', createdAt: '' },
-        { id: 'person-2', name: 'Person 2', email: '', phone: '', birthday: '', company: '', role: '', notes: '', avatarColor: '#000', interactions: [], linkedTaskIds: [], linkedEventIds: [], linkedNoteIds: [], stayInTouchDays: 0, lastInteractionDate: '', createdAt: '' },
+      const people: PersonDto[] = [
+        { id: 'person-1', linkedTaskIds: [taskId], linkedEventIds: [], linkedNoteIds: [], linkedTransactionIds: [] },
+        { id: 'person-2', linkedTaskIds: [], linkedEventIds: [], linkedNoteIds: [], linkedTransactionIds: [] },
       ];
-      const transactions: Transaction[] = [
-        { id: 'tx-1', title: 'Transaction 1', amount: 100, type: 'expense', category: 'Food', date: '', notes: '', recurring: false, linkedTaskIds: [taskId], linkedPersonIds: [], createdAt: '' },
-        { id: 'tx-2', title: 'Transaction 2', amount: 200, type: 'income', category: 'Salary', date: '', notes: '', recurring: false, linkedTaskIds: [], linkedPersonIds: [], createdAt: '' },
+      const transactions: TransactionDto[] = [
+        { id: 'tx-1', linkedTaskIds: [taskId], linkedPersonIds: [] },
+        { id: 'tx-2', linkedTaskIds: [], linkedPersonIds: [] },
       ];
 
-      // When
       const result = cleanupReferencesOnTaskDelete(taskId, { tasks, events, notes, people, transactions });
 
-      // Then
       expect(result.events[0].linkedTaskIds).not.toContain(taskId);
       expect(result.events[1].linkedTaskIds).toEqual([]);
       expect(result.notes[0].linkedTaskIds).not.toContain(taskId);
@@ -52,28 +49,25 @@ describe('EntityReferencePolicy', () => {
     });
 
     it('When the task has no inbound references, Then all collections remain unchanged', () => {
-      // Given
       const taskId = 'task-1';
-      const tasks: Task[] = [
-        { id: 'task-2', title: 'Other Task', description: '', status: 'todo', priority: 'medium', subtaskIds: [], tags: [], linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [], createdAt: '' },
+      const tasks: TaskDto[] = [
+        { id: 'task-2', linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [] },
       ];
-      const events: CalendarEvent[] = [
-        { id: 'event-1', title: 'Event 1', description: '', startDate: '', endDate: '', allDay: false, color: '#000', recurrence: 'none', linkedTaskIds: [], linkedPersonIds: [], createdAt: '' },
+      const events: EventDto[] = [
+        { id: 'event-1', linkedTaskIds: [], linkedPersonIds: [] },
       ];
-      const notes: Note[] = [
-        { id: 'note-1', title: 'Note 1', content: '', tags: [], linkedTaskIds: [], linkedPersonIds: [], isPinned: false, createdAt: '', updatedAt: '' },
+      const notes: NoteDto[] = [
+        { id: 'note-1', linkedTaskIds: [], linkedPersonIds: [] },
       ];
-      const people: Person[] = [
-        { id: 'person-1', name: 'Person 1', email: '', phone: '', birthday: '', company: '', role: '', notes: '', avatarColor: '#000', interactions: [], linkedTaskIds: [], linkedEventIds: [], linkedNoteIds: [], stayInTouchDays: 0, lastInteractionDate: '', createdAt: '' },
+      const people: PersonDto[] = [
+        { id: 'person-1', linkedTaskIds: [], linkedEventIds: [], linkedNoteIds: [], linkedTransactionIds: [] },
       ];
-      const transactions: Transaction[] = [
-        { id: 'tx-1', title: 'Transaction 1', amount: 100, type: 'expense', category: 'Food', date: '', notes: '', recurring: false, linkedTaskIds: [], linkedPersonIds: [], createdAt: '' },
+      const transactions: TransactionDto[] = [
+        { id: 'tx-1', linkedTaskIds: [], linkedPersonIds: [] },
       ];
 
-      // When
       const result = cleanupReferencesOnTaskDelete(taskId, { tasks, events, notes, people, transactions });
 
-      // Then
       expect(result.events).toEqual(events);
       expect(result.notes).toEqual(notes);
       expect(result.people).toEqual(people);
@@ -83,24 +77,21 @@ describe('EntityReferencePolicy', () => {
 
   describe('Given an event is deleted', () => {
     it('When the event has inbound references, Then the event ID is removed from all linked arrays', () => {
-      // Given
       const eventId = 'event-1';
-      const tasks: Task[] = [
-        { id: 'task-1', title: 'Task 1', description: '', status: 'todo', priority: 'medium', subtaskIds: [], tags: [], linkedEventIds: [eventId], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [], createdAt: '' },
-        { id: 'task-2', title: 'Task 2', description: '', status: 'todo', priority: 'low', subtaskIds: [], tags: [], linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [], createdAt: '' },
+      const tasks: TaskDto[] = [
+        { id: 'task-1', linkedEventIds: [eventId], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [] },
+        { id: 'task-2', linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [] },
       ];
-      const events: CalendarEvent[] = [
-        { id: 'event-2', title: 'Event 2', description: '', startDate: '', endDate: '', allDay: false, color: '#000', recurrence: 'none', linkedTaskIds: [], linkedPersonIds: [], createdAt: '' },
+      const events: EventDto[] = [
+        { id: 'event-2', linkedTaskIds: [], linkedPersonIds: [] },
       ];
-      const people: Person[] = [
-        { id: 'person-1', name: 'Person 1', email: '', phone: '', birthday: '', company: '', role: '', notes: '', avatarColor: '#000', interactions: [], linkedTaskIds: [], linkedEventIds: [eventId], linkedNoteIds: [], stayInTouchDays: 0, lastInteractionDate: '', createdAt: '' },
-        { id: 'person-2', name: 'Person 2', email: '', phone: '', birthday: '', company: '', role: '', notes: '', avatarColor: '#000', interactions: [], linkedTaskIds: [], linkedEventIds: [], linkedNoteIds: [], stayInTouchDays: 0, lastInteractionDate: '', createdAt: '' },
+      const people: PersonDto[] = [
+        { id: 'person-1', linkedTaskIds: [], linkedEventIds: [eventId], linkedNoteIds: [], linkedTransactionIds: [] },
+        { id: 'person-2', linkedTaskIds: [], linkedEventIds: [], linkedNoteIds: [], linkedTransactionIds: [] },
       ];
 
-      // When
       const result = cleanupReferencesOnEventDelete(eventId, { tasks, events, people });
 
-      // Then
       expect(result.tasks[0].linkedEventIds).not.toContain(eventId);
       expect(result.tasks[1].linkedEventIds).toEqual([]);
       expect(result.people[0].linkedEventIds).not.toContain(eventId);
@@ -108,22 +99,19 @@ describe('EntityReferencePolicy', () => {
     });
 
     it('When the event has no inbound references, Then all collections remain unchanged', () => {
-      // Given
       const eventId = 'event-1';
-      const tasks: Task[] = [
-        { id: 'task-1', title: 'Task 1', description: '', status: 'todo', priority: 'medium', subtaskIds: [], tags: [], linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [], createdAt: '' },
+      const tasks: TaskDto[] = [
+        { id: 'task-1', linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [] },
       ];
-      const events: CalendarEvent[] = [
-        { id: 'event-2', title: 'Event 2', description: '', startDate: '', endDate: '', allDay: false, color: '#000', recurrence: 'none', linkedTaskIds: [], linkedPersonIds: [], createdAt: '' },
+      const events: EventDto[] = [
+        { id: 'event-2', linkedTaskIds: [], linkedPersonIds: [] },
       ];
-      const people: Person[] = [
-        { id: 'person-1', name: 'Person 1', email: '', phone: '', birthday: '', company: '', role: '', notes: '', avatarColor: '#000', interactions: [], linkedTaskIds: [], linkedEventIds: [], linkedNoteIds: [], stayInTouchDays: 0, lastInteractionDate: '', createdAt: '' },
+      const people: PersonDto[] = [
+        { id: 'person-1', linkedTaskIds: [], linkedEventIds: [], linkedNoteIds: [], linkedTransactionIds: [] },
       ];
 
-      // When
       const result = cleanupReferencesOnEventDelete(eventId, { tasks, events, people });
 
-      // Then
       expect(result.tasks).toEqual(tasks);
       expect(result.events).toEqual(events);
       expect(result.people).toEqual(people);
@@ -132,24 +120,21 @@ describe('EntityReferencePolicy', () => {
 
   describe('Given a note is deleted', () => {
     it('When the note has inbound references, Then the note ID is removed from all linked arrays', () => {
-      // Given
       const noteId = 'note-1';
-      const tasks: Task[] = [
-        { id: 'task-1', title: 'Task 1', description: '', status: 'todo', priority: 'medium', subtaskIds: [], tags: [], linkedEventIds: [], linkedNoteIds: [noteId], linkedPersonIds: [], linkedTransactionIds: [], createdAt: '' },
-        { id: 'task-2', title: 'Task 2', description: '', status: 'todo', priority: 'low', subtaskIds: [], tags: [], linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [], createdAt: '' },
+      const tasks: TaskDto[] = [
+        { id: 'task-1', linkedEventIds: [], linkedNoteIds: [noteId], linkedPersonIds: [], linkedTransactionIds: [] },
+        { id: 'task-2', linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [] },
       ];
-      const notes: Note[] = [
-        { id: 'note-2', title: 'Note 2', content: '', tags: [], linkedTaskIds: [], linkedPersonIds: [], isPinned: false, createdAt: '', updatedAt: '' },
+      const notes: NoteDto[] = [
+        { id: 'note-2', linkedTaskIds: [], linkedPersonIds: [] },
       ];
-      const people: Person[] = [
-        { id: 'person-1', name: 'Person 1', email: '', phone: '', birthday: '', company: '', role: '', notes: '', avatarColor: '#000', interactions: [], linkedTaskIds: [], linkedEventIds: [], linkedNoteIds: [noteId], stayInTouchDays: 0, lastInteractionDate: '', createdAt: '' },
-        { id: 'person-2', name: 'Person 2', email: '', phone: '', birthday: '', company: '', role: '', notes: '', avatarColor: '#000', interactions: [], linkedTaskIds: [], linkedEventIds: [], linkedNoteIds: [], stayInTouchDays: 0, lastInteractionDate: '', createdAt: '' },
+      const people: PersonDto[] = [
+        { id: 'person-1', linkedTaskIds: [], linkedEventIds: [], linkedNoteIds: [noteId], linkedTransactionIds: [] },
+        { id: 'person-2', linkedTaskIds: [], linkedEventIds: [], linkedNoteIds: [], linkedTransactionIds: [] },
       ];
 
-      // When
       const result = cleanupReferencesOnNoteDelete(noteId, { tasks, notes, people });
 
-      // Then
       expect(result.tasks[0].linkedNoteIds).not.toContain(noteId);
       expect(result.tasks[1].linkedNoteIds).toEqual([]);
       expect(result.people[0].linkedNoteIds).not.toContain(noteId);
@@ -157,22 +142,19 @@ describe('EntityReferencePolicy', () => {
     });
 
     it('When the note has no inbound references, Then all collections remain unchanged', () => {
-      // Given
       const noteId = 'note-1';
-      const tasks: Task[] = [
-        { id: 'task-1', title: 'Task 1', description: '', status: 'todo', priority: 'medium', subtaskIds: [], tags: [], linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [], createdAt: '' },
+      const tasks: TaskDto[] = [
+        { id: 'task-1', linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [] },
       ];
-      const notes: Note[] = [
-        { id: 'note-2', title: 'Note 2', content: '', tags: [], linkedTaskIds: [], linkedPersonIds: [], isPinned: false, createdAt: '', updatedAt: '' },
+      const notes: NoteDto[] = [
+        { id: 'note-2', linkedTaskIds: [], linkedPersonIds: [] },
       ];
-      const people: Person[] = [
-        { id: 'person-1', name: 'Person 1', email: '', phone: '', birthday: '', company: '', role: '', notes: '', avatarColor: '#000', interactions: [], linkedTaskIds: [], linkedEventIds: [], linkedNoteIds: [], stayInTouchDays: 0, lastInteractionDate: '', createdAt: '' },
+      const people: PersonDto[] = [
+        { id: 'person-1', linkedTaskIds: [], linkedEventIds: [], linkedNoteIds: [], linkedTransactionIds: [] },
       ];
 
-      // When
       const result = cleanupReferencesOnNoteDelete(noteId, { tasks, notes, people });
 
-      // Then
       expect(result.tasks).toEqual(tasks);
       expect(result.notes).toEqual(notes);
       expect(result.people).toEqual(people);
@@ -181,32 +163,29 @@ describe('EntityReferencePolicy', () => {
 
   describe('Given a person is deleted', () => {
     it('When the person has inbound references, Then the person ID is removed from all linked arrays', () => {
-      // Given
       const personId = 'person-1';
-      const tasks: Task[] = [
-        { id: 'task-1', title: 'Task 1', description: '', status: 'todo', priority: 'medium', subtaskIds: [], tags: [], linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [personId], linkedTransactionIds: [], createdAt: '' },
-        { id: 'task-2', title: 'Task 2', description: '', status: 'todo', priority: 'low', subtaskIds: [], tags: [], linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [], createdAt: '' },
+      const tasks: TaskDto[] = [
+        { id: 'task-1', linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [personId], linkedTransactionIds: [] },
+        { id: 'task-2', linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [] },
       ];
-      const events: CalendarEvent[] = [
-        { id: 'event-1', title: 'Event 1', description: '', startDate: '', endDate: '', allDay: false, color: '#000', recurrence: 'none', linkedTaskIds: [], linkedPersonIds: [personId], createdAt: '' },
-        { id: 'event-2', title: 'Event 2', description: '', startDate: '', endDate: '', allDay: false, color: '#000', recurrence: 'none', linkedTaskIds: [], linkedPersonIds: [], createdAt: '' },
+      const events: EventDto[] = [
+        { id: 'event-1', linkedTaskIds: [], linkedPersonIds: [personId] },
+        { id: 'event-2', linkedTaskIds: [], linkedPersonIds: [] },
       ];
-      const notes: Note[] = [
-        { id: 'note-1', title: 'Note 1', content: '', tags: [], linkedTaskIds: [], linkedPersonIds: [personId], isPinned: false, createdAt: '', updatedAt: '' },
-        { id: 'note-2', title: 'Note 2', content: '', tags: [], linkedTaskIds: [], linkedPersonIds: [], isPinned: false, createdAt: '', updatedAt: '' },
+      const notes: NoteDto[] = [
+        { id: 'note-1', linkedTaskIds: [], linkedPersonIds: [personId] },
+        { id: 'note-2', linkedTaskIds: [], linkedPersonIds: [] },
       ];
-      const people: Person[] = [
-        { id: 'person-2', name: 'Person 2', email: '', phone: '', birthday: '', company: '', role: '', notes: '', avatarColor: '#000', interactions: [], linkedTaskIds: [], linkedEventIds: [], linkedNoteIds: [], stayInTouchDays: 0, lastInteractionDate: '', createdAt: '' },
+      const people: PersonDto[] = [
+        { id: 'person-2', linkedTaskIds: [], linkedEventIds: [], linkedNoteIds: [], linkedTransactionIds: [] },
       ];
-      const transactions: Transaction[] = [
-        { id: 'tx-1', title: 'Transaction 1', amount: 100, type: 'expense', category: 'Food', date: '', notes: '', recurring: false, linkedTaskIds: [], linkedPersonIds: [personId], createdAt: '' },
-        { id: 'tx-2', title: 'Transaction 2', amount: 200, type: 'income', category: 'Salary', date: '', notes: '', recurring: false, linkedTaskIds: [], linkedPersonIds: [], createdAt: '' },
+      const transactions: TransactionDto[] = [
+        { id: 'tx-1', linkedTaskIds: [], linkedPersonIds: [personId] },
+        { id: 'tx-2', linkedTaskIds: [], linkedPersonIds: [] },
       ];
 
-      // When
       const result = cleanupReferencesOnPersonDelete(personId, { tasks, events, notes, people, transactions });
 
-      // Then
       expect(result.tasks[0].linkedPersonIds).not.toContain(personId);
       expect(result.tasks[1].linkedPersonIds).toEqual([]);
       expect(result.events[0].linkedPersonIds).not.toContain(personId);
@@ -218,28 +197,25 @@ describe('EntityReferencePolicy', () => {
     });
 
     it('When the person has no inbound references, Then all collections remain unchanged', () => {
-      // Given
       const personId = 'person-1';
-      const tasks: Task[] = [
-        { id: 'task-1', title: 'Task 1', description: '', status: 'todo', priority: 'medium', subtaskIds: [], tags: [], linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [], createdAt: '' },
+      const tasks: TaskDto[] = [
+        { id: 'task-1', linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [] },
       ];
-      const events: CalendarEvent[] = [
-        { id: 'event-1', title: 'Event 1', description: '', startDate: '', endDate: '', allDay: false, color: '#000', recurrence: 'none', linkedTaskIds: [], linkedPersonIds: [], createdAt: '' },
+      const events: EventDto[] = [
+        { id: 'event-1', linkedTaskIds: [], linkedPersonIds: [] },
       ];
-      const notes: Note[] = [
-        { id: 'note-1', title: 'Note 1', content: '', tags: [], linkedTaskIds: [], linkedPersonIds: [], isPinned: false, createdAt: '', updatedAt: '' },
+      const notes: NoteDto[] = [
+        { id: 'note-1', linkedTaskIds: [], linkedPersonIds: [] },
       ];
-      const people: Person[] = [
-        { id: 'person-2', name: 'Person 2', email: '', phone: '', birthday: '', company: '', role: '', notes: '', avatarColor: '#000', interactions: [], linkedTaskIds: [], linkedEventIds: [], linkedNoteIds: [], stayInTouchDays: 0, lastInteractionDate: '', createdAt: '' },
+      const people: PersonDto[] = [
+        { id: 'person-2', linkedTaskIds: [], linkedEventIds: [], linkedNoteIds: [], linkedTransactionIds: [] },
       ];
-      const transactions: Transaction[] = [
-        { id: 'tx-1', title: 'Transaction 1', amount: 100, type: 'expense', category: 'Food', date: '', notes: '', recurring: false, linkedTaskIds: [], linkedPersonIds: [], createdAt: '' },
+      const transactions: TransactionDto[] = [
+        { id: 'tx-1', linkedTaskIds: [], linkedPersonIds: [] },
       ];
 
-      // When
       const result = cleanupReferencesOnPersonDelete(personId, { tasks, events, notes, people, transactions });
 
-      // Then
       expect(result.tasks).toEqual(tasks);
       expect(result.events).toEqual(events);
       expect(result.notes).toEqual(notes);
@@ -250,38 +226,32 @@ describe('EntityReferencePolicy', () => {
 
   describe('Given a transaction is deleted', () => {
     it('When the transaction has inbound references, Then the transaction ID is removed from all linked arrays', () => {
-      // Given
       const transactionId = 'tx-1';
-      const tasks: Task[] = [
-        { id: 'task-1', title: 'Task 1', description: '', status: 'todo', priority: 'medium', subtaskIds: [], tags: [], linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [transactionId], createdAt: '' },
-        { id: 'task-2', title: 'Task 2', description: '', status: 'todo', priority: 'low', subtaskIds: [], tags: [], linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [], createdAt: '' },
+      const tasks: TaskDto[] = [
+        { id: 'task-1', linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [transactionId] },
+        { id: 'task-2', linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [] },
       ];
-      const transactions: Transaction[] = [
-        { id: 'tx-2', title: 'Transaction 2', amount: 200, type: 'income', category: 'Salary', date: '', notes: '', recurring: false, linkedTaskIds: [], linkedPersonIds: [], createdAt: '' },
+      const transactions: TransactionDto[] = [
+        { id: 'tx-2', linkedTaskIds: [], linkedPersonIds: [] },
       ];
 
-      // When
       const result = cleanupReferencesOnTransactionDelete(transactionId, { tasks, transactions });
 
-      // Then
       expect(result.tasks[0].linkedTransactionIds).not.toContain(transactionId);
       expect(result.tasks[1].linkedTransactionIds).toEqual([]);
     });
 
     it('When the transaction has no inbound references, Then all collections remain unchanged', () => {
-      // Given
       const transactionId = 'tx-1';
-      const tasks: Task[] = [
-        { id: 'task-1', title: 'Task 1', description: '', status: 'todo', priority: 'medium', subtaskIds: [], tags: [], linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [], createdAt: '' },
+      const tasks: TaskDto[] = [
+        { id: 'task-1', linkedEventIds: [], linkedNoteIds: [], linkedPersonIds: [], linkedTransactionIds: [] },
       ];
-      const transactions: Transaction[] = [
-        { id: 'tx-2', title: 'Transaction 2', amount: 200, type: 'income', category: 'Salary', date: '', notes: '', recurring: false, linkedTaskIds: [], linkedPersonIds: [], createdAt: '' },
+      const transactions: TransactionDto[] = [
+        { id: 'tx-2', linkedTaskIds: [], linkedPersonIds: [] },
       ];
 
-      // When
       const result = cleanupReferencesOnTransactionDelete(transactionId, { tasks, transactions });
 
-      // Then
       expect(result.tasks).toEqual(tasks);
       expect(result.transactions).toEqual(transactions);
     });
