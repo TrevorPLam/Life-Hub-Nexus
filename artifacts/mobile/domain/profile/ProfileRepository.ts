@@ -1,5 +1,6 @@
 // Deep module for profile persistence with anti-corruption layer
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getProfile, updateProfile, type Profile as ApiProfile, type UpdateProfile as ApiUpdateProfile } from '@workspace/api-client-react';
 
 const STORAGE_KEY = '@lifeos/profile';
 const CURRENT_VERSION = 1;
@@ -66,6 +67,7 @@ export type ProfileSaveResult =
 export interface ProfileRepository {
   load(): Promise<ProfileLoadResult>;
   save(profile: Profile): Promise<ProfileSaveResult>;
+  sync(): Promise<ProfileSaveResult>; // Sync with server (local-first)
 }
 
 // Default values
@@ -182,6 +184,77 @@ class AsyncStorageProfileRepository implements ProfileRepository {
         error: {
           type: 'storage-error',
           message: error instanceof Error ? error.message : 'Unknown storage error',
+        },
+      };
+    }
+  }
+
+  async sync(): Promise<ProfileSaveResult> {
+    try {
+      // Load local profile
+      const localResult = await this.load();
+      if (!localResult.success) {
+        return { success: false, error: { type: 'storage-error', message: 'Failed to load local profile for sync' } };
+      }
+
+      const localProfile = localResult.data;
+
+      // Convert to API format
+      const apiUpdate: ApiUpdateProfile = {
+        name: localProfile.name || undefined,
+        username: localProfile.username || undefined,
+        avatarColor: localProfile.avatarColor || undefined,
+        avatarUri: localProfile.avatarUri || undefined,
+        pronouns: localProfile.pronouns || undefined,
+        bio: localProfile.bio || undefined,
+        about: localProfile.about || undefined,
+        birthday: localProfile.birthday || undefined,
+        location: localProfile.location || undefined,
+        occupation: localProfile.occupation || undefined,
+        website: localProfile.website || undefined,
+        phone: localProfile.phone || undefined,
+        email: localProfile.email || undefined,
+        socialTwitter: localProfile.socialTwitter || undefined,
+        socialInstagram: localProfile.socialInstagram || undefined,
+        socialLinkedin: localProfile.socialLinkedin || undefined,
+        onboarded: localProfile.onboarded,
+        privacy: localProfile.privacy,
+      };
+
+      // Sync to server (last-write-wins based on server timestamp)
+      const apiProfile: ApiProfile = await updateProfile(apiUpdate);
+
+      // Convert back to domain format (use defaults for undefined fields)
+      const syncedProfile: Profile = {
+        name: apiProfile.name ?? DEFAULT_PROFILE.name,
+        username: apiProfile.username ?? DEFAULT_PROFILE.username,
+        avatarColor: apiProfile.avatarColor ?? DEFAULT_PROFILE.avatarColor,
+        avatarUri: apiProfile.avatarUri ?? DEFAULT_PROFILE.avatarUri,
+        pronouns: apiProfile.pronouns ?? DEFAULT_PROFILE.pronouns,
+        bio: apiProfile.bio ?? DEFAULT_PROFILE.bio,
+        about: apiProfile.about ?? DEFAULT_PROFILE.about,
+        birthday: apiProfile.birthday ?? DEFAULT_PROFILE.birthday,
+        location: apiProfile.location ?? DEFAULT_PROFILE.location,
+        occupation: apiProfile.occupation ?? DEFAULT_PROFILE.occupation,
+        website: apiProfile.website ?? DEFAULT_PROFILE.website,
+        phone: apiProfile.phone ?? DEFAULT_PROFILE.phone,
+        email: apiProfile.email ?? DEFAULT_PROFILE.email,
+        socialTwitter: apiProfile.socialTwitter ?? DEFAULT_PROFILE.socialTwitter,
+        socialInstagram: apiProfile.socialInstagram ?? DEFAULT_PROFILE.socialInstagram,
+        socialLinkedin: apiProfile.socialLinkedin ?? DEFAULT_PROFILE.socialLinkedin,
+        onboarded: apiProfile.onboarded ?? DEFAULT_PROFILE.onboarded,
+        privacy: apiProfile.privacy ?? DEFAULT_PROFILE.privacy,
+      };
+
+      // Save synced profile locally
+      return await this.save(syncedProfile);
+    } catch (error) {
+      // Network or server error - preserve local-first behavior
+      return {
+        success: false,
+        error: {
+          type: 'storage-error',
+          message: error instanceof Error ? error.message : 'Sync failed - local data preserved',
         },
       };
     }

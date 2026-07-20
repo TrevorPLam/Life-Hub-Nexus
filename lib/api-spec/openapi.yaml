@@ -10,6 +10,8 @@ servers:
 tags:
   - name: health
     description: Health operations
+  - name: profile
+    description: Profile operations
 paths:
   /healthz:
     get:
@@ -24,7 +26,93 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /profile:
+    get:
+      operationId: getProfile
+      tags: [profile]
+      summary: Get user profile
+      description: Retrieve the authenticated user's profile
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Profile retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    put:
+      operationId: updateProfile
+      tags: [profile]
+      summary: Update user profile
+      description: Update the authenticated user's profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfile"
+      responses:
+        "200":
+          description: Profile updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Profile"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteProfile
+      tags: [profile]
+      summary: Delete user profile
+      description: Permanently delete the authenticated user's profile (no retention)
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Profile deleted successfully
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     HealthStatus:
       type: object
@@ -33,4 +121,174 @@ components:
           type: string
       required:
         - status
+    ProfilePrivacy:
+      type: object
+      properties:
+        bio:
+          type: string
+          enum: [public, friends, private]
+          default: public
+        birthday:
+          type: string
+          enum: [public, friends, private]
+          default: friends
+        location:
+          type: string
+          enum: [public, friends, private]
+          default: public
+        occupation:
+          type: string
+          enum: [public, friends, private]
+          default: public
+        website:
+          type: string
+          enum: [public, friends, private]
+          default: public
+        phone:
+          type: string
+          enum: [public, friends, private]
+          default: private
+        email:
+          type: string
+          enum: [public, friends, private]
+          default: private
+        about:
+          type: string
+          enum: [public, friends, private]
+          default: public
+        pronouns:
+          type: string
+          enum: [public, friends, private]
+          default: public
+        socialLinks:
+          type: string
+          enum: [public, friends, private]
+          default: public
+      required:
+        - bio
+        - birthday
+        - location
+        - occupation
+        - website
+        - phone
+        - email
+        - about
+        - pronouns
+        - socialLinks
+    Profile:
+      type: object
+      properties:
+        id:
+          type: string
+          description: User ID (owner)
+        name:
+          type: string
+          default: ""
+        username:
+          type: string
+          default: ""
+        avatarColor:
+          type: string
+          default: "#6366F1"
+        avatarUri:
+          type: string
+          default: ""
+        pronouns:
+          type: string
+          default: ""
+        bio:
+          type: string
+          default: ""
+        about:
+          type: string
+          default: ""
+        birthday:
+          type: string
+          default: ""
+        location:
+          type: string
+          default: ""
+        occupation:
+          type: string
+          default: ""
+        website:
+          type: string
+          default: ""
+        phone:
+          type: string
+          default: ""
+        email:
+          type: string
+          default: ""
+        socialTwitter:
+          type: string
+          default: ""
+        socialInstagram:
+          type: string
+          default: ""
+        socialLinkedin:
+          type: string
+          default: ""
+        onboarded:
+          type: boolean
+          default: false
+        privacy:
+          $ref: "#/components/schemas/ProfilePrivacy"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - privacy
+        - createdAt
+        - updatedAt
+    UpdateProfile:
+      type: object
+      properties:
+        name:
+          type: string
+        username:
+          type: string
+        avatarColor:
+          type: string
+        avatarUri:
+          type: string
+        pronouns:
+          type: string
+        bio:
+          type: string
+        about:
+          type: string
+        birthday:
+          type: string
+        location:
+          type: string
+        occupation:
+          type: string
+        website:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        socialTwitter:
+          type: string
+        socialInstagram:
+          type: string
+        socialLinkedin:
+          type: string
+        onboarded:
+          type: boolean
+        privacy:
+          $ref: "#/components/schemas/ProfilePrivacy"
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
 

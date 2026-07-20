@@ -52,6 +52,19 @@ _Replace the heading above with the project's name, and this line with one sente
 - **Profile migration:** Versioned DTO with automatic migration from legacy format (no version field) to current versioned structure
 - **Error observability:** Repository returns discriminated union results (success/error) that UI can react to, with recoverable outcomes for invalid data
 - **Mobile preview server security:** Secure adapter boundary with HTML encoding, trusted origin validation, path traversal protection, and SRI for external scripts. Server validates host headers against optional allowlist (TRUSTED_ORIGINS env var), encodes all template values, serves local QR library with integrity hash, and adds security headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy).
+- **Profile sync bounded contexts:**
+  - **Identity context:** Owns user authentication (email/password), session management, and user ID generation. Responsible for validating credentials and issuing auth tokens.
+  - **Profile context:** Owns profile data model, validation rules, and business logic. Manages profile CRUD operations scoped to authenticated user ID.
+  - **Local Device Cache context:** Owns offline storage (AsyncStorage), conflict detection, and sync orchestration. Implements optimistic updates and last-write-wins conflict resolution based on server timestamps.
+
+## Profile sync BDD scenarios
+
+- **Profile creation:** Given an authenticated user, when creating a profile, then the profile is stored on the server with the user's ID as owner and synced to local cache.
+- **Profile retrieval:** Given an authenticated user, when requesting their profile, then the server returns only their own profile data and local cache is updated.
+- **Profile update:** Given an authenticated user, when updating their profile, then the change is persisted on the server with owner validation and synced to local cache.
+- **Profile deletion:** Given an authenticated user, when deleting their profile, then the server permanently removes their profile data (no retention) and local cache is cleared.
+- **Offline edit:** Given a user with cached profile data, when editing while offline, then changes are persisted locally and queued for sync when connection is restored.
+- **Conflict handling:** Given concurrent edits from multiple devices, when syncing, then the server's version with the latest timestamp wins (last-write-wins) and the local cache is updated to match.
 
 ## Product
 
