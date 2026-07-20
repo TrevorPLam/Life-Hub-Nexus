@@ -1,7 +1,8 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
-import router from "./routes";
+import { createApiRouter } from "./routes";
+import { createPlaceholderAuthVerifier } from "./middlewares/placeholder-verifier";
 import { logger } from "./lib/logger";
 
 const app: Express = express();
@@ -29,6 +30,6 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use("/api", router);
+app.use("/api", createApiRouter(createPlaceholderAuthVerifier()));
 
 export default app;

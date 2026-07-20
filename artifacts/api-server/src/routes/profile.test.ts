@@ -2,6 +2,13 @@
 import request from 'supertest';
 import express from 'express';
 import profileRouter from './profile';
+import { createAuthMiddleware } from '../middlewares/auth';
+import { createTestAuthVerifier } from '../middlewares/test-verifier';
+import { createActor } from '../application/identity/actor';
+import { describe, expect, it } from '@jest/globals';
+
+const VALID_TOKEN = 'valid-token';
+const testActor = createActor('user-123');
 
 // Deterministic test factories
 function createTestProfile(overrides = {}) {
@@ -41,8 +48,9 @@ function createTestProfile(overrides = {}) {
 
 function createTestApp() {
   const app = express();
+  const verifier = createTestAuthVerifier({ [VALID_TOKEN]: testActor });
   app.use(express.json());
-  app.use('/api', profileRouter);
+  app.use('/api', createAuthMiddleware(verifier), profileRouter);
   return app;
 }
 
@@ -55,8 +63,7 @@ describe('Profile API Routes', () => {
       // When: Requesting their profile
       const response = await request(app)
         .get('/api/profile')
-        .set('Authorization', 'Bearer valid-token')
-        .set('X-User-Id', 'user-123');
+        .set('Authorization', 'Bearer valid-token');
       
       // Then: Returns their profile data
       expect(response.status).toBe(200);
@@ -83,8 +90,7 @@ describe('Profile API Routes', () => {
       // When: Requesting user B's profile (not implemented in mock - returns 404)
       const response = await request(app)
         .get('/api/profile/user-456')
-        .set('Authorization', 'Bearer valid-token')
-        .set('X-User-Id', 'user-123');
+        .set('Authorization', 'Bearer valid-token');
       
       // Then: Returns 404 (route not found - cross-user access to be implemented with DB)
       expect(response.status).toBe(404);
@@ -101,7 +107,6 @@ describe('Profile API Routes', () => {
       const response = await request(app)
         .put('/api/profile')
         .set('Authorization', 'Bearer valid-token')
-        .set('X-User-Id', 'user-123')
         .send(updates);
       
       // Then: Changes are persisted
@@ -118,7 +123,6 @@ describe('Profile API Routes', () => {
       const response = await request(app)
         .put('/api/profile')
         .set('Authorization', 'Bearer valid-token')
-        .set('X-User-Id', 'user-123')
         .send(invalidData);
       
       // Then: Returns 200 (mock accepts all data - validation to be implemented with Zod in DB layer)
@@ -133,7 +137,6 @@ describe('Profile API Routes', () => {
       const response = await request(app)
         .put('/api/profile/user-456')
         .set('Authorization', 'Bearer valid-token')
-        .set('X-User-Id', 'user-123')
         .send({ name: 'Hacked' });
       
       // Then: Returns 404 (route not found - cross-user access to be implemented with DB)
@@ -149,8 +152,7 @@ describe('Profile API Routes', () => {
       // When: Deleting their profile
       const response = await request(app)
         .delete('/api/profile')
-        .set('Authorization', 'Bearer valid-token')
-        .set('X-User-Id', 'user-123');
+        .set('Authorization', 'Bearer valid-token');
       
       // Then: Profile is permanently deleted (no retention)
       expect(response.status).toBe(204);
@@ -158,8 +160,7 @@ describe('Profile API Routes', () => {
       // Verify: Subsequent GET returns 200 (mock doesn't track state - to be implemented with DB)
       const getResponse = await request(app)
         .get('/api/profile')
-        .set('Authorization', 'Bearer valid-token')
-        .set('X-User-Id', 'user-123');
+        .set('Authorization', 'Bearer valid-token');
       expect(getResponse.status).toBe(200);
     });
 

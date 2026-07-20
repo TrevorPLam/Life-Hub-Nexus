@@ -1,10 +1,17 @@
 import { Router, type IRouter } from "express";
+import { createAuthMiddleware } from "../middlewares/auth";
+import type { AuthVerifier } from "../application/identity/actor";
 import healthRouter from "./health";
 import profileRouter from "./profile";
 
-const router: IRouter = Router();
+export function createApiRouter(verifier: AuthVerifier): IRouter {
+  const router: IRouter = Router();
 
-router.use(healthRouter);
-router.use(profileRouter);
+  // Health check stays unauthenticated.
+  router.use(healthRouter);
 
-export default router;
+  // Profile routes require a verified actor identity.
+  router.use(createAuthMiddleware(verifier), profileRouter);
+
+  return router;
+}

@@ -6,9 +6,9 @@ Planning, Calendar, Knowledge, People, Finance, Relationships, Notifications,
 Sync, and Search.
 
 > **Baseline status:** This repo is at an architecture-baseline stage. The API
-> server has working health and mock profile routes; the mobile app stores
-> profile data locally in `AsyncStorage`; generated API clients and Zod schemas
-> are owned by Orval.
+> server has working health and mock profile routes behind an authenticated
+> identity boundary; the mobile app stores profile data locally in `AsyncStorage`;
+> generated API clients and Zod schemas are owned by Orval.
 
 ## Quick start
 
@@ -41,7 +41,7 @@ pnpm --filter @workspace/api-server test -- --runInBand
 # Full typecheck
 pnpm run typecheck
 
-# Run API server (requires PORT and DATABASE_URL)
+# Run API server (requires PORT; DATABASE_URL is currently unused by mock routes)
 pnpm --filter @workspace/api-server run dev
 
 # Run mobile preview server (requires static-build/)
@@ -60,6 +60,10 @@ pnpm --filter @workspace/db run push
 |---|---|---|
 | `DATABASE_URL` | `lib/db`, `api-server` dev/db commands | PostgreSQL connection string |
 | `PORT` | `api-server` start | HTTP server port |
+| `AUTH_ISSUER_URL` | `api-server` (T-016) | Identity provider issuer URL |
+| `AUTH_AUDIENCE` | `api-server` (T-016) | Expected JWT audience |
+| `AUTH_CLIENT_ID` | `api-server` (T-016) | OAuth2 / OIDC client ID |
+| `AUTH_TOKEN_ALGORITHM` | `api-server` (T-016) | JWT signing algorithm (e.g. `RS256`) |
 | `TRUSTED_ORIGINS` | `mobile` preview server | Optional comma-separated allowed origin allowlist |
 | `BASE_PATH` | `mobile` preview server | Optional base path for static assets (default `/`) |
 | `REPLIT_EXPO_DEV_DOMAIN` | `mobile` dev script | Expo dev proxy domain |
@@ -67,7 +71,7 @@ pnpm --filter @workspace/db run push
 | `REPL_ID` | `mobile` dev script | Replit repl identifier |
 | `EXPO_PUBLIC_DOMAIN` | `mobile` build | Public domain for production build |
 
-No `.env.example` is present yet; create one locally from the variables above.
+See `.env.example` for a copy-ready template.
 
 ## Architecture notes
 
@@ -86,8 +90,11 @@ No `.env.example` is present yet; create one locally from the variables above.
 
 - The API server profile routes are currently in-memory mocks; they do not
   persist to the PostgreSQL database.
-- Authentication is not implemented; routes rely on test-only headers and a
-  mock verifier today.
+- Authentication is implemented as a server-side boundary: a bearer token is
+  verified by an `AuthVerifier` port and the resulting `AuthenticatedActor` is
+  injected into protected routes. Client-owned `X-User-Id` headers are rejected.
+  A placeholder verifier rejects all tokens until T-016 wires a real identity
+  provider.
 - `lib/db` defines a `profiles` table, but no migration or runtime integration
   exists yet.
 - The mobile build (`pnpm --filter @workspace/mobile run build`) requires a

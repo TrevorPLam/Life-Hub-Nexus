@@ -219,7 +219,7 @@ pnpm --filter @workspace/mobile run typecheck
 
 ---
 
-## [ ] T-015 | STATUS: TODO | Establish authenticated server identity boundary
+## [x] T-015 | STATUS: DONE | Establish authenticated server identity boundary
 
 **Purpose:** Replace mock request identity with a verified server-side authentication seam before any additional personal-data API is created.
 
@@ -250,10 +250,10 @@ pnpm --filter @workspace/api-server run typecheck
 
 ### Subtasks
 
-- [ ] T-015.01 | AGENT | Target: `artifacts/api-server/src/routes/`, `artifacts/api-server/src/app.ts`, `lib/api-spec/openapi.yaml`, `lib/api-client-react/src/custom-fetch.ts` | Research all current auth assumptions, client configuration call sites, and profile route access paths. Confirm whether an existing provider SDK or verified-token service is already available.
-- [ ] T-015.02 | AGENT | Target: `artifacts/api-server/src/middlewares/auth.test.ts` | Write failing Given/When/Then tests for missing credentials, invalid credentials, verified actor injection, rejection of `X-User-Id`, and route access under a test verifier.
-- [ ] T-015.03 | AGENT | Target: `artifacts/api-server/src/middlewares/`, `artifacts/api-server/src/app.ts`, `artifacts/api-server/src/routes/` | Implement the narrow authentication middleware and test-only verifier composition. Update protected route signatures to read the verified actor rather than raw headers.
-- [ ] T-015.04 | AGENT | Target: `.env.example`, `replit.md`, `TODO.md` | Create or update `.env.example` with variable names and safe examples only. Document the remaining production-provider integration requirement. Run focused tests and typecheck before marking complete.
+- [x] T-015.01 | AGENT | Target: `artifacts/api-server/src/routes/`, `artifacts/api-server/src/app.ts`, `lib/api-spec/openapi.yaml`, `lib/api-client-react/src/custom-fetch.ts` | Research all current auth assumptions, client configuration call sites, and profile route access paths. Confirmed no production provider SDK is wired yet; placeholder verifier is used until T-016.
+- [x] T-015.02 | AGENT | Target: `artifacts/api-server/src/middlewares/auth.test.ts` | Wrote Given/When/Then tests for missing credentials, invalid credentials, verified actor injection, rejection of `X-User-Id`, and route access under a test verifier.
+- [x] T-015.03 | AGENT | Target: `artifacts/api-server/src/middlewares/`, `artifacts/api-server/src/app.ts`, `artifacts/api-server/src/routes/` | Implemented `AuthVerifier` port, `createAuthMiddleware`, `createTestAuthVerifier`, `createPlaceholderAuthVerifier`, and updated profile routes to consume `req.actor`.
+- [x] T-015.04 | AGENT | Target: `.env.example`, `replit.md`, `TODO.md` | Created `.env.example` with non-secret placeholder values, updated `replit.md`, and ran focused tests and typecheck.
 
 ---
 
@@ -464,3 +464,4 @@ YYYY-MM-DD | TASK-ID | commands run | result | follow-up or none
 - 2026-07-20 | T-012 | `pnpm --filter @workspace/domain-core test -- --runInBand` (8/8 passed), `pnpm --filter @workspace/domain-core run typecheck` (passed), `pnpm run typecheck` (passed), `pnpm --filter @workspace/domain-core run build` (passed) | DONE | Created `@workspace/domain-core` with `EntityId` branding helpers, `Result<T,E>`, `Clock`/`IdGenerator` ports, and deterministic test adapters. Added project reference in root `tsconfig.json` and documented the package boundary in `replit.md`. No existing feature migrated.
 - 2026-07-20 | T-013 | `pnpm --filter @workspace/mobile exec jest --runInBand artifacts/mobile/__tests__/entity-reference-policy.test.ts` (10/10 passed), `pnpm run typecheck` (passed) | DONE | Created `docs/architecture/relationships.md` with relationship model, matrix of all `linked*Ids` fields, proposed `RelationshipRepository`/`RelationshipPolicy` contracts, deletion semantics, and current-vs-target mismatches. Added `replit.md` pointer. No production code changed.
 - 2026-07-20 | T-014 | `pnpm --filter @workspace/mobile exec jest --runInBand artifacts/mobile/__tests__/entity-reference-policy.test.ts artifacts/mobile/__tests__/reference-cleanup-service.test.ts` (19/19 passed), `pnpm --filter @workspace/mobile run typecheck` (passed) | DONE | Refactored `EntityReferencePolicy` to feature-neutral DTOs, introduced `ReferenceCollectionStore` port and `createAsyncStorageReferenceCollectionStore`, rewrote `ReferenceCleanupService` with shape validation and `CleanupResult`, updated all context deletion callers, removed dead `ReferenceCleanupOrchestrator.ts`, and added `reference-cleanup-service.test.ts`. Fixed notes-loaded-from-budget and notes-wrapper-overwrite bugs. Documented AsyncStorage boundary and remaining non-atomic write limitation in `replit.md` and `docs/architecture/relationships.md`. Follow-up: T-015.
+- 2026-07-20 | T-015 | `pnpm --filter @workspace/api-server test -- --runInBand` (16/16 passed), `pnpm --filter @workspace/api-server run typecheck` (passed), `pnpm run typecheck` (passed) | DONE | Established server-side identity boundary with `AuthenticatedActor`, `AuthVerifier` port, `createAuthMiddleware`, `createTestAuthVerifier`, and `createPlaceholderAuthVerifier`. Updated profile routes to consume `req.actor`, rejected `X-User-Id` client header, created `.env.example`, and updated `README.md`/`replit.md`. Follow-up: T-016.

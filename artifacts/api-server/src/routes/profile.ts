@@ -1,33 +1,22 @@
-import { Router, type IRouter, Request, Response } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
+import type { AuthenticatedActor } from "../application/identity/actor";
 import { GetProfileResponse, UpdateProfileBody } from "@workspace/api-zod";
 
 const router: IRouter = Router();
 
-// Middleware to extract user ID from headers (simplified auth for now)
-function getUserId(req: Request): string | null {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return null;
-  }
-  // In production, validate JWT and extract user ID
-  // For now, use X-User-Id header for testing
-  const userId = req.headers['x-user-id'] as string | undefined;
-  return userId || null;
-}
-
 // GET /api/profile - Get authenticated user's profile
 router.get("/profile", (req: Request, res: Response): void => {
-  const userId = getUserId(req);
+  const actor = req.actor;
   
-  if (!userId) {
+  if (!actor) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
 
-  // TODO: Fetch from database using userId
+  // TODO: Fetch from database using actor.userId
   // For now, return mock data
   const mockProfile = {
-    id: userId,
+    id: actor.userId,
     name: "Test User",
     username: "testuser",
     avatarColor: "#6366F1",
@@ -67,9 +56,9 @@ router.get("/profile", (req: Request, res: Response): void => {
 
 // PUT /api/profile - Update authenticated user's profile
 router.put("/profile", (req: Request, res: Response): void => {
-  const userId = getUserId(req);
+  const actor = req.actor;
   
-  if (!userId) {
+  if (!actor) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
@@ -77,10 +66,10 @@ router.put("/profile", (req: Request, res: Response): void => {
   try {
     const updates = UpdateProfileBody.parse(req.body);
     
-    // TODO: Update in database using userId
+    // TODO: Update in database using actor.userId
     // For now, return mock updated profile
     const mockProfile = {
-      id: userId,
+      id: actor.userId,
       name: updates.name || "Test User",
       username: updates.username || "testuser",
       avatarColor: updates.avatarColor || "#6366F1",
@@ -124,14 +113,14 @@ router.put("/profile", (req: Request, res: Response): void => {
 
 // DELETE /api/profile - Delete authenticated user's profile
 router.delete("/profile", (req: Request, res: Response): void => {
-  const userId = getUserId(req);
+  const actor = req.actor;
   
-  if (!userId) {
+  if (!actor) {
     res.status(401).json({ error: "Unauthorized" });
     return;
   }
 
-  // TODO: Delete from database using userId (permanent deletion, no retention)
+  // TODO: Delete from database using actor.userId (permanent deletion, no retention)
   // For now, return success
   res.status(204).send();
 });
