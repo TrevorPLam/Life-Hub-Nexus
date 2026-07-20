@@ -147,8 +147,15 @@ export function PeopleProvider({ children }: { children: React.ReactNode }) {
     setPeople(prev => { const u = prev.map(p => p.id === id ? { ...p, ...updates } : p); AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(u)); return u; });
   }, []);
 
-  const deletePerson = useCallback((id: string) => {
+  const deletePerson = useCallback(async (id: string) => {
     setPeople(prev => { const u = prev.filter(p => p.id !== id); AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(u)); return u; });
+    // Clean up references in other contexts
+    try {
+      const { cleanupPersonReferences } = await import('../domain/references/ReferenceCleanupService');
+      await cleanupPersonReferences(id);
+    } catch (error) {
+      console.error('Failed to cleanup person references:', error);
+    }
   }, []);
 
   const getPerson = useCallback((id: string) => people.find(p => p.id === id), [people]);

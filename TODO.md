@@ -141,7 +141,7 @@ pnpm --filter @workspace/mobile run typecheck
 
 ---
 
-## [ ] T-004 | STATUS: TODO | Define and enforce cross-entity reference integrity
+## [x] T-004 | STATUS: DONE | Define and enforce cross-entity reference integrity
 
 **Purpose:** Prevent deleted life-management entities from leaving broken links in related records.
 
@@ -172,11 +172,15 @@ pnpm --filter @workspace/mobile run typecheck
 
 ### Subtasks
 
-- [ ] T-004.01 | AGENT | Target: all five mobile context files | Research every `linked*Ids` field, all delete operations, and every UI consumer. Produce a relation matrix in the task completion note before implementation.
-- [ ] T-004.02 | AGENT | Target: `artifacts/mobile/__tests__/entity-reference-policy.test.ts` | Write failing Given/When/Then tests for task, event, note, person, and transaction deletion. Assert only inbound links are removed and non-linked data remains unchanged.
-- [ ] T-004.03 | AGENT | Target: `artifacts/mobile/domain/references/EntityReferencePolicy.ts` | Implement pure, typed cleanup operations based on the approved relation matrix. Keep persistence and React state outside this module.
-- [ ] T-004.04 | AGENT | Target: `artifacts/mobile/context/WorkContext.tsx`, `artifacts/mobile/context/CalendarContext.tsx`, `artifacts/mobile/context/NotesContext.tsx`, `artifacts/mobile/context/PeopleContext.tsx`, `artifacts/mobile/context/BudgetContext.tsx` | Integrate the policy through a narrow orchestration boundary so every deletion follows the same rule. Add no new direct cross-context mutation.
-- [ ] T-004.05 | AGENT | Target: `artifacts/mobile/__tests__/entity-reference-policy.test.ts`, `replit.md`, `TODO.md` | Run focused tests and mobile typecheck. Document relation ownership and cleanup behavior, then record validation results.
+- [x] T-004.01 | AGENT | Target: all five mobile context files | Research every `linked*Ids` field, all delete operations, and every UI consumer. Produce a relation matrix in the task completion note before implementation.
+- [x] T-004.02 | AGENT | Target: `artifacts/mobile/__tests__/entity-reference-policy.test.ts` | Write failing Given/When/Then tests for task, event, note, person, and transaction deletion. Assert only inbound links are removed and non-linked data remains unchanged.
+- [x] T-004.03 | AGENT | Target: `artifacts/mobile/domain/references/EntityReferencePolicy.ts` | Implement pure, typed cleanup operations based on the approved relation matrix. Keep persistence and React state outside this module.
+- [x] T-004.04 | AGENT | Target: `artifacts/mobile/context/WorkContext.tsx`, `artifacts/mobile/context/CalendarContext.tsx`, `artifacts/mobile/context/NotesContext.tsx`, `artifacts/mobile/context/PeopleContext.tsx`, `artifacts/mobile/context/BudgetContext.tsx` | Integrate the policy through a narrow orchestration boundary so every deletion follows the same rule. Add no new direct cross-context mutation.
+- [x] T-004.05 | AGENT | Target: `artifacts/mobile/__tests__/entity-reference-policy.test.ts`, `replit.md`, `TODO.md` | Run focused tests and mobile typecheck. Document relation ownership and cleanup behavior, then record validation results.
+
+### Completion Note
+
+2026-07-19 | T-004 | Cross-entity reference integrity | DONE | Created deep module at `artifacts/mobile/domain/references/EntityReferencePolicy.ts` implementing DDD aggregate boundary principles. Policy provides pure, typed cleanup operations for task, event, note, person, and transaction deletion. Relation matrix: Task→Events/Notes/People/Transactions, Event→Tasks/People, Note→Tasks/People, Person→Tasks/Events/Notes/Transactions, Transaction→Tasks. Cleanup removes deleted entity ID from all inbound linkedIds arrays (cascade cleanup by reference only, not entity deletion). Created `ReferenceCleanupService.ts` for AsyncStorage coordination to avoid circular context dependencies. Integrated cleanup into all five context delete operations (deleteTask, deleteEvent, deleteNote, deletePerson, deleteTransaction) via async service calls. All 10 Given/When/Then tests pass (5 entity types × 2 scenarios each: with/without inbound references). Mobile typecheck fails due to pre-existing errors in `hooks/useColors.ts` (T-009 scope). Documented relation ownership and cleanup behavior.
 
 ---
 

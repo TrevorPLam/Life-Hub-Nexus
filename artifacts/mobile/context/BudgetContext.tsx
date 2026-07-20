@@ -137,12 +137,19 @@ export function BudgetProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const deleteTransaction = useCallback((id: string) => {
+  const deleteTransaction = useCallback(async (id: string) => {
     setTransactions(prev => {
       const u = prev.filter(t => t.id !== id);
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(u));
       return u;
     });
+    // Clean up references in other contexts
+    try {
+      const { cleanupTransactionReferences } = await import('../domain/references/ReferenceCleanupService');
+      await cleanupTransactionReferences(id);
+    } catch (error) {
+      console.error('Failed to cleanup transaction references:', error);
+    }
   }, []);
 
   const getTransaction = useCallback((id: string) => transactions.find(t => t.id === id), [transactions]);

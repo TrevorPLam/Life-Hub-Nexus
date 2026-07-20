@@ -176,12 +176,19 @@ export function CalendarProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const deleteEvent = useCallback((id: string) => {
+  const deleteEvent = useCallback(async (id: string) => {
     setEvents(prev => {
       const u = prev.filter(e => e.id !== id);
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(u));
       return u;
     });
+    // Clean up references in other contexts
+    try {
+      const { cleanupEventReferences } = await import('../domain/references/ReferenceCleanupService');
+      await cleanupEventReferences(id);
+    } catch (error) {
+      console.error('Failed to cleanup event references:', error);
+    }
   }, []);
 
   const getEvent = useCallback((id: string) => events.find(e => e.id === id), [events]);

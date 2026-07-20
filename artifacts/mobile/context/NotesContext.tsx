@@ -123,8 +123,15 @@ export function NotesProvider({ children }: { children: React.ReactNode }) {
     });
   }, [folders, save]);
 
-  const deleteNote = useCallback((id: string) => {
+  const deleteNote = useCallback(async (id: string) => {
     setNotes(prev => { const u = prev.filter(n => n.id !== id); save(u, folders); return u; });
+    // Clean up references in other contexts
+    try {
+      const { cleanupNoteReferences } = await import('../domain/references/ReferenceCleanupService');
+      await cleanupNoteReferences(id);
+    } catch (error) {
+      console.error('Failed to cleanup note references:', error);
+    }
   }, [folders, save]);
 
   const getNote = useCallback((id: string) => notes.find(n => n.id === id), [notes]);

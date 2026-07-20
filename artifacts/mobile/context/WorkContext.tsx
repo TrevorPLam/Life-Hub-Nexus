@@ -149,7 +149,7 @@ export function WorkProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const deleteTask = useCallback((id: string) => {
+  const deleteTask = useCallback(async (id: string) => {
     setTasks(prev => {
       const task = prev.find(t => t.id === id);
       let updated = prev.filter(t => t.id !== id && t.parentId !== id);
@@ -161,6 +161,13 @@ export function WorkProvider({ children }: { children: React.ReactNode }) {
       AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       return updated;
     });
+    // Clean up references in other contexts
+    try {
+      const { cleanupTaskReferences } = await import('../domain/references/ReferenceCleanupService');
+      await cleanupTaskReferences(id);
+    } catch (error) {
+      console.error('Failed to cleanup task references:', error);
+    }
   }, []);
 
   const toggleComplete = useCallback((id: string) => {
