@@ -92,4 +92,5 @@ _Populate as you build — explicit user instructions worth remembering across s
 ## Pointers
 
 - See `docs/architecture/context-map.md` for the full bounded-context map, dependency rules, and tracked migration debt.
+- See `docs/architecture/relationships.md` for the relationship bounded context, deletion semantics, proposed `RelationshipRepository` contract, and current `linked*Ids` migration debt.
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details

@@ -143,7 +143,7 @@ pnpm run typecheck
 
 ---
 
-## [ ] T-013 | STATUS: TODO | Specify the relationship capability and deletion semantics
+## [x] T-013 | STATUS: DONE | Specify the relationship capability and deletion semantics
 
 **Purpose:** Replace ad hoc cross-module link assumptions with one explicit, feature-neutral relationship contract before implementation.
 
@@ -174,10 +174,10 @@ pnpm run typecheck
 
 ### Subtasks
 
-- [ ] T-013.01 | AGENT | Target: all mobile context files listed above, `artifacts/mobile/domain/references/` | Inventory every link field, link creator, UI consumer, deletion operation, AsyncStorage key, and existing reference-cleanup test. Verify whether current cleanup behavior is consistent with stored data shapes.
-- [ ] T-013.02 | AGENT | Target: `docs/architecture/relationships.md` | Write a relationship matrix that maps each existing link to source context, target context, cardinality, relation type, owner, deletion behavior, sync requirement, and future database representation.
-- [ ] T-013.03 | AGENT | Target: `docs/architecture/relationships.md`, `replit.md` | Define the proposed small contract for `RelationshipRepository`: create, remove, listByEntity, and removeForEntity. Define which operations are transactional and which are eventual.
-- [ ] T-013.04 | AGENT | Target: `TODO.md` | Run the focused existing relationship test only as a baseline. Record any mismatch between specified and current behavior as a prerequisite for T-014; mark T-013 complete without changing production behavior.
+- [x] T-013.01 | AGENT | Target: all mobile context files listed above, `artifacts/mobile/domain/references/` | Inventoried every link field, link creator, UI consumer, deletion operation, AsyncStorage key, and existing reference-cleanup test. Found storage-shape inconsistencies in `ReferenceCleanupService` (notes loaded from budget key, malformed data silently defaulted, `ReferenceCleanupOrchestrator` unused).
+- [x] T-013.02 | AGENT | Target: `docs/architecture/relationships.md` | Wrote a relationship matrix mapping all `linked*Ids` fields to source/target contexts, cardinality, relation type, owner, deletion behavior, sync requirement, and future database representation.
+- [x] T-013.03 | AGENT | Target: `docs/architecture/relationships.md`, `replit.md` | Defined `RelationshipRepository` (`create`, `remove`, `listByEntity`, `removeForEntity`) and `RelationshipPolicy` (`canLink`, `onSourceDeleted`, `onTargetDeleted`) contracts. Documented transactional vs eventual semantics. Added a pointer in `replit.md`.
+- [x] T-013.04 | AGENT | Target: `TODO.md` | Ran the focused `entity-reference-policy` test (10/10 passed) and full `pnpm run typecheck` (passed). Recorded mismatches between specified and current behavior in `docs/architecture/relationships.md` section 9 as prerequisites for T-014. Marked T-013 complete without production changes.
 
 ---
 
@@ -212,7 +212,7 @@ pnpm --filter @workspace/mobile run typecheck
 
 ### Subtasks
 
-- [ ] T-014.01 | AGENT | Target: `artifacts/mobile/domain/references/`, listed context files, existing tests | Analyze storage shapes and cleanup call sites. Confirm the current budget, notes, events, people, and task serialization formats before writing tests.
+- [ ] T-014.01 | AGENT | Target: `artifacts/mobile/domain/references/`, listed context files, existing tests | Analyze storage shapes and cleanup call sites. Confirm the current budget, notes, events, people, and task serialization formats before writing tests. Use the mismatches documented in `docs/architecture/relationships.md` section 9 as the initial defect list.
 - [ ] T-014.02 | AGENT | Target: `artifacts/mobile/__tests__/reference-cleanup-service.test.ts` | Write failing Given/When/Then tests for task, event, note, person, and transaction deletion. Assert that the correct storage collection changes, unrelated collections are preserved, malformed data returns a recoverable failure, and no context import is required.
 - [ ] T-014.03 | AGENT | Target: `artifacts/mobile/domain/references/EntityReferencePolicy.ts`, `artifacts/mobile/domain/references/ReferenceCleanupService.ts` | Refactor policy types into feature-neutral DTOs and introduce a small persistence port. Implement an AsyncStorage adapter that validates each stored shape and returns typed outcomes.
 - [ ] T-014.04 | AGENT | Target: `artifacts/mobile/context/`, `replit.md`, `TODO.md` | Update deletion callers to handle the structured result without direct persistence imports. Run only the focused tests and mobile typecheck. Document the temporary AsyncStorage boundary and remaining atomicity limitation.
@@ -462,3 +462,4 @@ YYYY-MM-DD | TASK-ID | commands run | result | follow-up or none
 - 2026-07-20 | T-010 | `pnpm run typecheck` (passed), `pnpm --filter @workspace/mobile test -- --runInBand` (17/17 passed), `pnpm --filter @workspace/api-server test -- --runInBand` (10/10 passed), `pnpm --filter @workspace/mobile exec node --test server/serve.test.js` (12/12 passed), `pnpm --filter @workspace/api-spec run codegen` (Orval 8.21.0, generated code matched tracked files) | DONE | Verified README.md, replit.md, and TODO.md updated with baseline facts. Next: T-011.
 - 2026-07-20 | T-011 | `pnpm run typecheck` (passed) | DONE | Created `docs/architecture/context-map.md` with all 12 bounded contexts, dependency rules, provider policy, and migration debt table. Updated `replit.md` with context map pointer and module dependency rules. No production imports/exports changed.
 - 2026-07-20 | T-012 | `pnpm --filter @workspace/domain-core test -- --runInBand` (8/8 passed), `pnpm --filter @workspace/domain-core run typecheck` (passed), `pnpm run typecheck` (passed), `pnpm --filter @workspace/domain-core run build` (passed) | DONE | Created `@workspace/domain-core` with `EntityId` branding helpers, `Result<T,E>`, `Clock`/`IdGenerator` ports, and deterministic test adapters. Added project reference in root `tsconfig.json` and documented the package boundary in `replit.md`. No existing feature migrated.
+- 2026-07-20 | T-013 | `pnpm --filter @workspace/mobile exec jest --runInBand artifacts/mobile/__tests__/entity-reference-policy.test.ts` (10/10 passed), `pnpm run typecheck` (passed) | DONE | Created `docs/architecture/relationships.md` with relationship model, matrix of all `linked*Ids` fields, proposed `RelationshipRepository`/`RelationshipPolicy` contracts, deletion semantics, and current-vs-target mismatches. Added `replit.md` pointer. No production code changed.
