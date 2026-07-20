@@ -257,7 +257,7 @@ pnpm --filter @workspace/api-server run typecheck
 
 ---
 
-## [ ] T-016 | STATUS: BLOCKED | Select the production identity provider and obtain non-secret integration configuration
+## [!] T-016 | STATUS: BLOCKED | Select the production identity provider and obtain non-secret integration configuration
 
 **Purpose:** Make the external identity decision needed to replace the test authentication verifier with a production-capable adapter.
 
@@ -287,9 +287,11 @@ pnpm --filter @workspace/api-server run typecheck
 
 ### Subtasks
 
-- [ ] T-016.01 | AGENT | Target: `docs/architecture/identity-decision.md`, `.env.example`, `replit.md` | Research the exact configuration contract required by the `AuthVerifier` boundary and draft a provider-neutral decision record with evaluation criteria. Do not select or configure an external provider.
-- [ ] T-016.02 | HUMAN | Target: external identity provider account and product configuration | Select a provider that supports the documented requirements and create the required development configuration. Supply only non-secret values required for local configuration, such as issuer URL, audience, client identifier, and approved redirect/deep-link origins. Keep secrets in the provider dashboard or local untracked environment file.
+- [x] T-016.01 | AGENT | Target: `docs/architecture/identity-decision.md`, `.env.example`, `replit.md` | Research the exact configuration contract required by the `AuthVerifier` boundary and drafted a provider-neutral decision record with evaluation criteria. Did not select or configure an external provider.
+- [!] T-016.02 | HUMAN | Target: external identity provider account and product configuration | BLOCKED pending human decision. Select a provider that supports the documented requirements and create the required development configuration. Supply only non-secret values required for local configuration, such as issuer URL, audience, client identifier, and approved redirect/deep-link origins. Keep secrets in the provider dashboard or local untracked environment file.
 - [ ] T-016.03 | AGENT | Target: `docs/architecture/identity-decision.md`, `.env.example`, `replit.md`, `TODO.md` | Record the selected provider, supported flows, non-secret configuration names, and account-deletion constraints. Verify no secret was added to tracked files; run API typecheck and mark T-016 complete.
+
+**Blocker note:** T-016.01 completed; T-016.02 requires a human product/account decision. Once the provider and non-secret values are supplied, T-016.03 can implement the adapter and close T-016.
 
 ---
 

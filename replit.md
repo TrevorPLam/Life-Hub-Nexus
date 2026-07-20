@@ -91,7 +91,7 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 - **Mobile static build requires deployment domain:** `pnpm --filter @workspace/mobile run build` requires `REPLIT_INTERNAL_APP_DOMAIN`, `REPLIT_DEV_DOMAIN`, or `EXPO_PUBLIC_DOMAIN` environment variable to be set. This is expected for production builds on Replit or similar platforms.
 - **API routes are mock-only:** Profile endpoints in `artifacts/api-server/src/routes/` return deterministic in-memory data. They are not backed by `lib/db` yet.
-- **Authentication boundary:** The API server verifies bearer tokens through an `AuthVerifier` port and injects an `AuthenticatedActor` into protected routes. Client-owned `X-User-Id` headers are rejected. A placeholder verifier rejects all tokens until T-016.
+- **Authentication boundary:** The API server verifies bearer tokens through an `AuthVerifier` port and injects an `AuthenticatedActor` into protected routes. Client-owned `X-User-Id` headers are rejected. A placeholder verifier rejects all tokens until T-016. See `docs/architecture/identity-decision.md` for the provider-neutral contract and evaluation criteria.
 - **`.env.example` present:** See `.env.example` for copy-ready, non-secret environment variable templates.
 - **Formatting/linting scripts missing:** `pnpm run format:check` and `pnpm run lint` do not exist at the root yet.
 - **Codegen is source-owned:** `lib/api-client-react/src/generated/` and `lib/api-zod/src/generated/` are produced by `pnpm --filter @workspace/api-spec run codegen`. Do not edit them by hand.
