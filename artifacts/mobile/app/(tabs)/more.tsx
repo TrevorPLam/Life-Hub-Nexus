@@ -64,7 +64,7 @@ export default function MoreScreen() {
 
         {/* Profile card */}
         <TouchableOpacity style={[styles.profileCard, { backgroundColor: `${colors.primary}15`, borderColor: `${colors.primary}30` }]} onPress={() => router.push('/profile')}>
-          <Avatar name={profile.name || 'You'} color={profile.avatarColor} size={50} />
+          <Avatar name={profile.name || 'You'} color={profile.avatarColor} size={50} uri={profile.avatarUri || undefined} />
           <View style={styles.profileInfo}>
             <Text style={[styles.profileName, { color: colors.foreground }]}>{profile.name}</Text>
             <Text style={[styles.profileBio, { color: colors.mutedForeground }]}>{profile.bio || 'Living intentionally.'}</Text>

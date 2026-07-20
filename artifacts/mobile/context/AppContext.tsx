@@ -23,6 +23,7 @@ export interface AppProfile {
   name: string;
   username: string;
   avatarColor: string;
+  avatarUri: string;     // local file URI from image picker, empty string = no photo
   pronouns: string;      // e.g. "she/her", "he/him", "they/them"
 
   // Personal data
@@ -62,6 +63,7 @@ const DEFAULT_PROFILE: AppProfile = {
   name: '',
   username: '',
   avatarColor: '#6366F1',
+  avatarUri: '',
   pronouns: '',
   bio: '',
   about: '',
