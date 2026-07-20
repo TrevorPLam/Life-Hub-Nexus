@@ -67,7 +67,8 @@ function RootLayoutNav() {
 
       {/* Budget screens */}
       <Stack.Screen name="budget/index" options={{ headerShown: false }} />
-      <Stack.Screen name="budget/new" options={{ title: 'New Transaction', presentation: 'modal', headerShown: false }} />
+      <Stack.Screen name="budget/new" options={{ headerShown: false, presentation: 'modal' }} />
+      <Stack.Screen name="budget/[id]" options={{ headerShown: false }} />
 
       {/* People screens */}
       <Stack.Screen name="people/index" options={{ headerShown: false }} />
