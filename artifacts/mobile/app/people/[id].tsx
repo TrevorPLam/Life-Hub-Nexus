@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Alert,
   Modal,
@@ -12,12 +12,13 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
-import { router, useLocalSearchParams, useNavigation } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import { usePeople, InteractionType } from '@/context/PeopleContext';
 import { Avatar } from '@/components/ui/Avatar';
 import { useWork } from '@/context/WorkContext';
 import { TaskItem } from '@/components/work/TaskItem';
+import { ScreenHeader } from '@/components/ui/ScreenHeader';
 
 const INTERACTION_TYPES: { key: InteractionType; icon: string; label: string }[] = [
   { key: 'meeting', icon: 'users', label: 'Meeting' },
@@ -40,29 +41,12 @@ export default function PersonDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { getPerson, deletePerson, addInteraction } = usePeople();
   const { tasks, toggleComplete } = useWork();
-  const navigation = useNavigation();
 
   const person = getPerson(id as string);
 
   const [showInteractionModal, setShowInteractionModal] = useState(false);
   const [intType, setIntType] = useState<InteractionType>('meeting');
   const [intDesc, setIntDesc] = useState('');
-
-  // Wire edit button into native header
-  useEffect(() => {
-    if (!person) return;
-    navigation.setOptions({
-      headerRight: () => (
-        <TouchableOpacity
-          onPress={() => router.push(`/people/new?id=${person.id}`)}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          style={{ marginRight: Platform.OS === 'ios' ? 0 : 8 }}
-        >
-          <Feather name="edit-2" size={18} color={colors.people} />
-        </TouchableOpacity>
-      ),
-    });
-  }, [person?.id, colors.people, navigation]);
 
   if (!person) return <View style={[styles.container, { backgroundColor: colors.background }]} />;
 
@@ -104,8 +88,18 @@ export default function PersonDetailScreen() {
   const getInteractionIcon = (type: InteractionType) =>
     INTERACTION_TYPES.find(t => t.key === type)?.icon || 'circle';
 
+  const editButton = (
+    <TouchableOpacity
+      onPress={() => router.push(`/people/new?id=${person.id}`)}
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+    >
+      <Feather name="edit-2" size={18} color={colors.people} />
+    </TouchableOpacity>
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <ScreenHeader title={person.name} rightElement={editButton} />
       <ScrollView
         contentContainerStyle={[
           styles.scrollContent,

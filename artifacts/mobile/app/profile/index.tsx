@@ -366,7 +366,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingBottom: 14, borderBottomWidth: StyleSheet.hairlineWidth,
   },
   backBtn: { padding: 4 },
-  headerTitle: { flex: 1, fontSize: 18, fontFamily: 'Inter_700Bold', textAlign: 'center', letterSpacing: -0.3 },
+  headerTitle: { flex: 1, fontSize: 17, fontFamily: 'Inter_700Bold', textAlign: 'center', letterSpacing: -0.2 },
   editBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1,

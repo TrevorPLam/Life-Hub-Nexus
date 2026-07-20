@@ -50,6 +50,7 @@ export default function DashboardScreen() {
   const todayStr = today.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
 
   const allTasks = getRootTasks();
+  const inProgressTasks = allTasks.filter(t => t.status === 'in-progress').slice(0, 3);
   const todayTasks = allTasks.filter(t => t.status !== 'done').slice(0, 4);
   const todayEvents = getEventsForDate(today);
   const upcomingEvents = getUpcomingEvents(3);
@@ -106,6 +107,21 @@ export default function DashboardScreen() {
               {overdueTouch.length} {overdueTouch.length === 1 ? 'person needs' : 'people need'} a check-in
             </Text>
           </TouchableOpacity>
+        )}
+
+        {/* In Progress */}
+        {inProgressTasks.length > 0 && (
+          <View style={styles.section}>
+            <SectionHeader title="In Progress" count={inProgressTasks.length} color="#3B82F6" onSeeAll={() => router.push('/(tabs)/work')} />
+            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+              {inProgressTasks.map(task => (
+                <TaskItem key={task.id} task={task} compact
+                  onPress={() => router.push(`/work/${task.id}`)}
+                  onToggle={() => toggleComplete(task.id)}
+                />
+              ))}
+            </View>
+          </View>
         )}
 
         {/* Today's Tasks */}

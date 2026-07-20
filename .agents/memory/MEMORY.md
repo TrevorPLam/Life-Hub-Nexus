@@ -1,0 +1,1 @@
+- [Calendar module architecture](calendar-module.md) — full rebuild: TimeGrid, TimePickerModal, recurrence, edit flow, day/week/month views.

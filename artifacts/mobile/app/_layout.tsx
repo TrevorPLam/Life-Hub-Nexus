@@ -55,15 +55,15 @@ function RootLayoutNav() {
       <Stack.Screen name="profile/edit" options={{ headerShown: false, presentation: 'modal' }} />
 
       {/* Work screens */}
-      <Stack.Screen name="work/[id]" options={{ title: 'Task', headerBackTitle: 'Work' }} />
+      <Stack.Screen name="work/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="work/new" options={{ title: 'New Task', presentation: 'modal', headerShown: false }} />
 
       {/* Calendar screens */}
-      <Stack.Screen name="calendar/[id]" options={{ title: 'Event', headerBackTitle: 'Calendar' }} />
+      <Stack.Screen name="calendar/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="calendar/new" options={{ title: 'New Event', presentation: 'modal', headerShown: false }} />
 
       {/* Notes screens */}
-      <Stack.Screen name="notes/[id]" options={{ title: '', headerBackTitle: 'Notes' }} />
+      <Stack.Screen name="notes/[id]" options={{ headerShown: false }} />
 
       {/* Budget screens */}
       <Stack.Screen name="budget/index" options={{ headerShown: false }} />
@@ -72,7 +72,7 @@ function RootLayoutNav() {
 
       {/* People screens */}
       <Stack.Screen name="people/index" options={{ headerShown: false }} />
-      <Stack.Screen name="people/[id]" options={{ title: 'Contact', headerBackTitle: 'People' }} />
+      <Stack.Screen name="people/[id]" options={{ headerShown: false }} />
       <Stack.Screen name="people/new" options={{ title: 'New Contact', presentation: 'modal', headerShown: false }} />
 
       {/* Social screens */}

@@ -8,7 +8,7 @@ import { useWork, Task, TaskStatus } from '@/context/WorkContext';
 import { TaskItem } from '@/components/work/TaskItem';
 import { EmptyState } from '@/components/ui/EmptyState';
 
-type Filter = 'all' | 'today' | 'priority' | 'done';
+type Filter = 'all' | 'inprogress' | 'today' | 'priority' | 'done';
 
 export default function WorkScreen() {
   const colors = useColors();
@@ -21,6 +21,7 @@ export default function WorkScreen() {
   const filteredTasks = allTasks.filter(task => {
     if (filter === 'done') return task.status === 'done';
     if (filter === 'all') return task.status !== 'done';
+    if (filter === 'inprogress') return task.status === 'in-progress';
     if (filter === 'today') {
       if (!task.dueDate) return false;
       return new Date(task.dueDate).toDateString() === new Date().toDateString() && task.status !== 'done';
@@ -31,8 +32,11 @@ export default function WorkScreen() {
 
   const topPad = Platform.OS === 'web' ? Math.max(insets.top, 67) : insets.top;
 
-  const FILTERS: { key: Filter; label: string }[] = [
+  const inProgressCount = allTasks.filter(t => t.status === 'in-progress').length;
+
+  const FILTERS: { key: Filter; label: string; badge?: number }[] = [
     { key: 'all', label: 'Active' },
+    { key: 'inprogress', label: 'In Progress', badge: inProgressCount || undefined },
     { key: 'today', label: 'Today' },
     { key: 'priority', label: 'Priority' },
     { key: 'done', label: 'Done' },
@@ -56,7 +60,14 @@ export default function WorkScreen() {
           {FILTERS.map(f => (
             <TouchableOpacity key={f.key} style={[styles.filterTab, filter === f.key && { borderBottomColor: colors.work, borderBottomWidth: 2 }]}
               onPress={() => setFilter(f.key)}>
-              <Text style={[styles.filterText, { color: filter === f.key ? colors.work : colors.mutedForeground }]}>{f.label}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
+                <Text style={[styles.filterText, { color: filter === f.key ? colors.work : colors.mutedForeground }]}>{f.label}</Text>
+                {f.badge ? (
+                  <View style={{ backgroundColor: `${colors.work}25`, borderRadius: 8, paddingHorizontal: 5, paddingVertical: 1 }}>
+                    <Text style={{ fontSize: 10, fontFamily: 'Inter_600SemiBold', color: colors.work }}>{f.badge}</Text>
+                  </View>
+                ) : null}
+              </View>
             </TouchableOpacity>
           ))}
         </View>
