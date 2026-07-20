@@ -1,0 +1,57 @@
+const moduleColors = {
+  work: '#3B82F6',
+  calendar: '#F97316',
+  notes: '#10B981',
+  budget: '#14B8A6',
+  people: '#8B5CF6',
+  social: '#F43F5E',
+};
+
+const colors = {
+  light: {
+    text: '#0A0A14',
+    tint: '#6366F1',
+    background: '#F5F5F8',
+    foreground: '#0A0A14',
+    card: '#FFFFFF',
+    cardForeground: '#0A0A14',
+    primary: '#6366F1',
+    primaryForeground: '#FFFFFF',
+    secondary: '#EEEEF4',
+    secondaryForeground: '#1A1A28',
+    muted: '#EBEBF5',
+    mutedForeground: '#7070A0',
+    accent: '#6366F1',
+    accentForeground: '#FFFFFF',
+    destructive: '#EF4444',
+    destructiveForeground: '#FFFFFF',
+    border: '#E2E2EC',
+    input: '#EBEBF5',
+    ...moduleColors,
+  },
+  dark: {
+    text: '#F0F0F8',
+    tint: '#818CF8',
+    background: '#0D0D14',
+    foreground: '#F0F0F8',
+    card: '#16162A',
+    cardForeground: '#F0F0F8',
+    primary: '#6366F1',
+    primaryForeground: '#FFFFFF',
+    secondary: '#1C1C2E',
+    secondaryForeground: '#A0A0C0',
+    muted: '#16162A',
+    mutedForeground: '#5A5A8A',
+    accent: '#818CF8',
+    accentForeground: '#FFFFFF',
+    destructive: '#EF4444',
+    destructiveForeground: '#FFFFFF',
+    border: '#252540',
+    input: '#1C1C2E',
+    ...moduleColors,
+  },
+  radius: 12,
+};
+
+export default colors;
+export { moduleColors };
