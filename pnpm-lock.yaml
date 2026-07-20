@@ -223,6 +223,10 @@ importers:
         version: 29.4.11(@babel/core@7.29.7)(@jest/transform@29.7.0)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.29.7))(esbuild@0.27.3)(jest-util@29.7.0)(jest@29.7.0(@types/node@25.9.5))(typescript@5.9.3)
 
   artifacts/mobile:
+    dependencies:
+      qr-code-styling:
+        specifier: 1.6.0
+        version: 1.6.0
     devDependencies:
       '@babel/core':
         specifier: ^7.25.2
@@ -4930,6 +4934,12 @@ packages:
 
   pure-rand@6.1.0:
     resolution: {integrity: sha512-bVWawvoZoBYpp6yIoQtQXHZjmz35RSVHnUOTefl8Vcjr8snTPY1wnpSPMWekcFwbxI6gtmT7rSYPFvz71ldiOA==}
+
+  qr-code-styling@1.6.0:
+    resolution: {integrity: sha512-d83pNjGZJWss6+nk8dhKhQXowcnwSEPcymgreszomlkPh49SR0RT0vBl8fcF5yJeYfGnzeRYmBcSsCPxbOn9mQ==}
+
+  qrcode-generator@1.5.2:
+    resolution: {integrity: sha512-pItrW0Z9HnDBnFmgiNrY1uxRdri32Uh9EjNYLPVC2zZ3ZRIIEqBoDgm4DkvDwNNDHTK7FNkmr8zAa77BYc9xNw==}
 
   qrcode-terminal@0.11.0:
     resolution: {integrity: sha512-Uu7ii+FQy4Qf82G4xu7ShHhjhGahEpCWc3x8UavY3CTcWV+ufmmCtwkr7ZKsX42jdL0kr1B5FKUeqJvAn51jzQ==}
@@ -11346,6 +11356,12 @@ snapshots:
   punycode@2.3.1: {}
 
   pure-rand@6.1.0: {}
+
+  qr-code-styling@1.6.0:
+    dependencies:
+      qrcode-generator: 1.5.2
+
+  qrcode-generator@1.5.2: {}
 
   qrcode-terminal@0.11.0: {}
 

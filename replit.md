@@ -11,7 +11,10 @@ _Replace the heading above with the project's name, and this line with one sente
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - `pnpm --filter @workspace/mobile test -- --runInBand` — run mobile pure-domain tests
 - `pnpm --filter @workspace/api-server test -- --runInBand` — run API server route tests
+- `pnpm --filter @workspace/mobile exec node --test server/serve.test.js` — run mobile preview server security tests
+- `pnpm --filter @workspace/mobile run serve` — run mobile preview server (requires static-build/)
 - Required env: `DATABASE_URL` — Postgres connection string
+- Mobile preview server env: `TRUSTED_ORIGINS` — comma-separated allowlist of trusted domains (optional, enables origin validation)
 
 ## Platform Support
 
@@ -48,6 +51,7 @@ _Replace the heading above with the project's name, and this line with one sente
 - **Profile persistence boundary:** Deep module pattern with anti-corruption layer - AsyncStorage details encapsulated in `ProfileRepository.ts`, exposing only domain types and result types
 - **Profile migration:** Versioned DTO with automatic migration from legacy format (no version field) to current versioned structure
 - **Error observability:** Repository returns discriminated union results (success/error) that UI can react to, with recoverable outcomes for invalid data
+- **Mobile preview server security:** Secure adapter boundary with HTML encoding, trusted origin validation, path traversal protection, and SRI for external scripts. Server validates host headers against optional allowlist (TRUSTED_ORIGINS env var), encodes all template values, serves local QR library with integrity hash, and adds security headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy).
 
 ## Product
 
@@ -59,7 +63,7 @@ _Populate as you build — explicit user instructions worth remembering across s
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- **Mobile static build requires deployment domain:** `pnpm --filter @workspace/mobile run build` requires `REPLIT_INTERNAL_APP_DOMAIN`, `REPLIT_DEV_DOMAIN`, or `EXPO_PUBLIC_DOMAIN` environment variable to be set. This is expected for production builds on Replit or similar platforms.
 
 ## Pointers
 

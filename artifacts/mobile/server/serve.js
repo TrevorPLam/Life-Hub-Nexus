@@ -12,10 +12,16 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const { URL } = require('url');
+const { htmlEncode, resolvePublicOrigin } = require('./security');
 
 const STATIC_ROOT = path.resolve(__dirname, '..', 'static-build');
 const TEMPLATE_PATH = path.resolve(__dirname, 'templates', 'landing-page.html');
 const basePath = (process.env.BASE_PATH || '/').replace(/\/+$/, '');
+
+// Trusted origins allowlist - configured via environment variable
+// Format: comma-separated list of allowed domains (e.g., "example.com,replit.dev")
+const TRUSTED_ORIGINS = (process.env.TRUSTED_ORIGINS || '').split(',').filter(Boolean).map(o => o.trim().toLowerCase());
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -57,42 +63,58 @@ function serveManifest(platform, res) {
   }
 
   const manifest = fs.readFileSync(manifestPath, 'utf-8');
-  res.writeHead(200, {
+  const securityHeaders = {
     'content-type': 'application/json',
     'expo-protocol-version': '1',
     'expo-sfv-version': '0',
-  });
+    'x-content-type-options': 'nosniff',
+  };
+  res.writeHead(200, securityHeaders);
   res.end(manifest);
 }
 
 function serveLandingPage(req, res, landingPageTemplate, appName) {
-  const forwardedProto = req.headers['x-forwarded-proto'];
-  const protocol = forwardedProto || 'https';
-  const host = req.headers['x-forwarded-host'] || req.headers['host'];
-  const baseUrl = `${protocol}://${host}`;
-  const expsUrl = `${host}`;
+  const origin = resolvePublicOrigin(req.headers, TRUSTED_ORIGINS);
+  if (!origin) {
+    res.writeHead(400, { 'content-type': 'text/plain; charset=utf-8' });
+    res.end('Invalid origin');
+    return;
+  }
+  
+  const { baseUrl, expsUrl } = origin;
 
+  // HTML-encode all dynamic values to prevent XSS
   const html = landingPageTemplate
-    .replace(/BASE_URL_PLACEHOLDER/g, baseUrl)
-    .replace(/EXPS_URL_PLACEHOLDER/g, expsUrl)
-    .replace(/APP_NAME_PLACEHOLDER/g, appName);
+    .replace(/BASE_URL_PLACEHOLDER/g, htmlEncode(baseUrl))
+    .replace(/EXPS_URL_PLACEHOLDER/g, htmlEncode(expsUrl))
+    .replace(/APP_NAME_PLACEHOLDER/g, htmlEncode(appName));
 
-  res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
+  const securityHeaders = {
+    'content-type': 'text/html; charset=utf-8',
+    'x-content-type-options': 'nosniff',
+    'x-frame-options': 'SAMEORIGIN',
+    'referrer-policy': 'strict-origin-when-cross-origin',
+  };
+  
+  res.writeHead(200, securityHeaders);
   res.end(html);
 }
 
 function serveStaticFile(urlPath, res) {
+  // Normalize path and remove any traversal attempts
   const safePath = path.normalize(urlPath).replace(/^(\.\.(\/|\\|$))+/, '');
   const filePath = path.join(STATIC_ROOT, safePath);
 
-  if (!filePath.startsWith(STATIC_ROOT)) {
-    res.writeHead(403);
+  // Ensure the resolved path is within STATIC_ROOT (prevent directory traversal)
+  const resolvedPath = path.resolve(filePath);
+  if (!resolvedPath.startsWith(STATIC_ROOT)) {
+    res.writeHead(403, { 'content-type': 'text/plain; charset=utf-8' });
     res.end('Forbidden');
     return;
   }
 
   if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-    res.writeHead(404);
+    res.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
     res.end('Not Found');
     return;
   }
@@ -100,7 +122,13 @@ function serveStaticFile(urlPath, res) {
   const ext = path.extname(filePath).toLowerCase();
   const contentType = MIME_TYPES[ext] || 'application/octet-stream';
   const content = fs.readFileSync(filePath);
-  res.writeHead(200, { 'content-type': contentType });
+  
+  const securityHeaders = {
+    'content-type': contentType,
+    'x-content-type-options': 'nosniff',
+  };
+  
+  res.writeHead(200, securityHeaders);
   res.end(content);
 }
 
