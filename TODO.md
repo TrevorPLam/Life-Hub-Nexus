@@ -1,124 +1,396 @@
-# Implementation Backlog
+# Architecture and Delivery Backlog
 
-## Task Format
+## Purpose
 
-- **Status values:** `TODO`, `BLOCKED`, `IN_PROGRESS`, `DONE`.
-- **Ownership:** `AGENT` performs all repository and CLI work. `HUMAN` is used only for an external product, account, or deployment decision that cannot be inferred or performed by an agent.
-- **Method:** Every parent task starts with a repository research gate. Write the failing test first for behavioral changes, implement the smallest change that passes, then refactor only with tests green.
-- **Specification:** Acceptance scenarios use Given/When/Then. Domain terms are defined at the boundary that owns them. A deep module exposes a small public API while encapsulating storage, transport, and implementation details.
-- **Execution:** Complete subtasks in order. Do not begin a blocked task. Update this file and `replit.md` when the task changes architecture, operations, or known limitations.
+This backlog is the executable plan for evolving Life Hub Nexus from a mobile prototype into a secure, local-first, modular life-operations application. Complete parent tasks in order unless a task is explicitly marked `BLOCKED`.
+
+## Task Format and Working Rules
+
+- **Status values:** `TODO`, `IN_PROGRESS`, `BLOCKED`, `DONE`.
+- **Ownership:** `AGENT` performs all repository research, code changes, tests, command execution, and documentation updates. `HUMAN` is used only for an external account, credential, legal, or irreversible product decision that cannot be made from repository evidence.
+- **Research gate:** The first subtask of every parent task verifies current files, imports, call sites, generated-code ownership, and commands. If findings invalidate the parent task, update this file and `replit.md` before implementation.
+- **SDD:** Each task states observable behavior, boundaries, dependencies, and verification before implementation begins.
+- **DDD:** A feature owns its domain rules and persistence model. Cross-feature interaction occurs through narrow contracts, not imports of another feature's UI state.
+- **TDD and BDD:** For behavioral changes, write focused failing Given/When/Then tests first. Implement the smallest change that passes. Refactor only while focused tests remain green.
+- **Deep modules:** Public APIs remain small. Storage keys, DTOs, migrations, network details, and framework mechanics stay private behind repositories and use cases.
+- **Generated code:** Never manually edit generated files under `lib/api-client-react/src/generated/` or `lib/api-zod/src/generated/`.
+- **Completion:** Mark a parent task `DONE` only after its listed validation commands pass and its required documentation is updated.
+- **Scope control:** A parent task is deliberately small. Create a new parent task rather than broadening implementation scope.
+
+## Architecture Direction
+
+- Keep one deployable API and one mobile app as a modular monolith.
+- Organize application code by bounded context: Identity, Profile, Planning, Calendar, Knowledge, People, Finance, Relationships, Notifications, Sync, and Search.
+- Use repositories and use cases as feature boundaries; do not add direct `AsyncStorage` access in UI components or React contexts.
+- Introduce an explicit relationship model rather than adding new `linked<Entity>Ids` fields.
+- Treat SQLite-backed local storage as the future authoritative device store. Treat remote APIs as synchronization adapters, not the UI's primary state container.
+- Authenticate every server request using verified credentials. The server derives actor identity from those credentials and never trusts a client-supplied owner header.
 
 ---
 
-## [x] T-001 | STATUS: DONE | Establish a reproducible verification baseline
+## [x] T-010 | STATUS: DONE | Establish the current architecture baseline
 
-**Purpose:** Make the current repository state observable before functional changes are made.
+**Purpose:** Record the actual repository state after the backlog reset so future work is based on verified evidence rather than prior assumptions.
 
-**Related file paths:** `package.json`, `pnpm-lock.yaml`, `tsconfig.json`, `replit.md`, `artifacts/*/package.json`, `lib/*/package.json`.
+**Related file paths:** `package.json`, `pnpm-workspace.yaml`, `tsconfig.json`, `artifacts/mobile/package.json`, `artifacts/api-server/package.json`, `lib/*/package.json`, `.github/workflows/quality.yml`, `replit.md`, `README.md`.
 
-**Definition of done:** Dependencies are installed with the lockfile; typecheck results are recorded; the documented commands accurately describe the current repository; no functional source changes are made.
+**Definition of done:** The workspace layout, package roles, supported commands, test status, generated-code ownership, known architectural limitations, and missing onboarding documents are recorded accurately.
 
-**Out of scope:** Dependency upgrades, feature work, changing application behavior, or suppressing type errors.
+**Out of scope:** Source-code refactoring, dependency upgrades, database mutation, API behavior changes, or product feature work.
 
-**Rules to follow:** Preserve `pnpm-lock.yaml`; use pnpm only; do not use `--force`; do not edit generated files; capture command failures verbatim before proposing corrections.
+**Rules to follow:** Use existing package scripts when possible; do not run database push commands; do not install packages; capture command failures verbatim; distinguish confirmed findings from assumptions.
 
-**Advanced coding pattern:** Executable architecture baseline: commands and project documentation form a versioned operational contract.
+**Advanced coding pattern:** Executable architecture decision record. Documentation is an operational contract that describes current truth and explicit next decisions.
 
-**Anti-patterns:** Installing with npm/yarn, deleting the lockfile, treating a missing dependency directory as a source failure, or broad builds when a typecheck answers the question.
+**Anti-patterns:** Treating prior task notes as current truth; running broad builds when a targeted command answers the question; adding a README that claims unverified behavior.
 
 **Imports/exports:** No application imports or exports change.
 
 **Depends on:** None.
 
-**Blocks:** T-002, T-003, T-004, T-005, T-006, T-007.
+**Blocks:** T-011, T-012, T-013, T-014, T-015, T-016, T-017.
 
 **Targeted validation commands:**
 
 ```powershell
-pnpm install --frozen-lockfile
 pnpm run typecheck
-pnpm --filter @workspace/api-server run typecheck
+pnpm --filter @workspace/mobile test -- --runInBand
+pnpm --filter @workspace/api-server test -- --runInBand
+```
+
+### Subtasks
+
+- [x] T-010.01 | AGENT | Target: repository root | Inspected workspace manifests, TypeScript project references, CI workflow, source entry points, and current Git status. Recorded package ownership and identified generated directories.
+- [x] T-010.02 | AGENT | Target: `artifacts/mobile/`, `artifacts/api-server/`, `lib/` | Ran targeted validation commands. All passed; no failures to classify.
+- [x] T-010.03 | AGENT | Target: `replit.md`, `README.md` | Updated `replit.md` with verified commands and current limitations. Created `README.md` with setup, architecture map, environment-variable inventory, and validation commands. Did not claim mock API is production-ready.
+- [x] T-010.04 | AGENT | Target: `TODO.md` | Recorded validation outcomes in the Task Completion Notes section and marked T-010 complete.
+
+---
+
+## [ ] T-011 | STATUS: TODO | Define bounded contexts and module dependency rules
+
+**Purpose:** Establish stable ownership boundaries before additional life-operation modules are implemented.
+
+**Related file paths:** `artifacts/mobile/app/_layout.tsx`, `artifacts/mobile/context/`, `artifacts/mobile/domain/`, `lib/db/src/schema/`, `lib/api-spec/openapi.yaml`, `replit.md`, `docs/architecture/context-map.md`.
+
+**Definition of done:** A versioned context map defines each initial bounded context, its owned entities, allowed dependencies, integration contracts, and deletion/data-retention responsibilities. The mobile composition root has a documented provider policy.
+
+**Out of scope:** Moving existing features, creating new database tables, implementing authentication, or introducing microservices.
+
+**Rules to follow:** Model ownership by business capability, not screen layout or database table; permit duplicate representations across contexts when their meaning differs; document every shared concept and translation point; retain a modular monolith deployment model.
+
+**Advanced coding pattern:** DDD bounded contexts and context mapping. Each context exposes a small published language and protects its internal model.
+
+**Anti-patterns:** A universal entity type shared by all modules; importing another feature's context or screen to reuse domain types; declaring microservices before boundaries are proven; coupling modules through global mutable state.
+
+**Imports/exports:** No production imports or exports change. Documentation may define intended future public APIs only.
+
+**Depends on:** T-010.
+
+**Blocks:** T-012, T-013, T-014, T-016.
+
+**Targeted validation commands:**
+
+```powershell
+pnpm run typecheck
+```
+
+### Subtasks
+
+- [ ] T-011.01 | AGENT | Target: `artifacts/mobile/app/_layout.tsx`, `artifacts/mobile/context/`, `artifacts/mobile/domain/` | Map current ownership of profile, tasks, calendar, notes, people, finance, social, references, persistence, and navigation. Identify all direct cross-context imports and all storage keys.
+- [ ] T-011.02 | AGENT | Target: `docs/architecture/context-map.md` | Create the context map covering Identity, Profile, Planning, Calendar, Knowledge, People, Finance, Relationships, Notifications, Sync, and Search. For each context state owned data, inbound/outbound contracts, deletion policy, and whether it is local-only or syncable.
+- [ ] T-011.03 | AGENT | Target: `docs/architecture/context-map.md`, `replit.md` | Define module dependency rules: presentation depends on application/domain contracts; application depends on domain and repository interfaces; data adapters implement repository interfaces; domain never imports React, Expo, AsyncStorage, or Express.
+- [ ] T-011.04 | AGENT | Target: `TODO.md`, `replit.md` | Verify that the documented map matches actual imports found during research. Record exceptions as explicit migration debt and mark T-011 complete.
+
+---
+
+## [ ] T-012 | STATUS: TODO | Create shared domain primitives without feature migration
+
+**Purpose:** Add the smallest shared foundation needed for future feature modules without prematurely moving existing entities.
+
+**Related file paths:** `lib/`, `tsconfig.json`, `artifacts/mobile/domain/`, `artifacts/api-server/src/`, `docs/architecture/context-map.md`, `replit.md`.
+
+**Definition of done:** A small shared package exposes branded identifiers, a result type, a clock interface, and an ID-generator interface with deterministic test adapters. No existing feature is migrated in this task.
+
+**Out of scope:** SQLite adoption, authentication, changing stored entity IDs, rewriting contexts, adding a dependency-injection framework, or adding domain entities.
+
+**Rules to follow:** Keep the public API minimal; make modules runtime-neutral; use interfaces for clocks and IDs; do not expose implementation-specific types; avoid a generic utility dumping ground.
+
+**Advanced coding pattern:** Deep module and ports-and-adapters. The package exposes domain-safe ports while runtime adapters remain private to consuming applications.
+
+**Anti-patterns:** Importing React Native or Node APIs into shared domain code; exporting internal helper functions; using `any`; globally replacing IDs without migration and compatibility tests.
+
+**Imports/exports:** Export only `EntityId` branding helpers, `Result`, `Clock`, `IdGenerator`, and test-safe deterministic implementations. Do not export storage or UI types.
+
+**Depends on:** T-011.
+
+**Blocks:** T-013, T-014, T-016.
+
+**Targeted validation commands:**
+
+```powershell
+pnpm --filter @workspace/domain-core test -- --runInBand
+pnpm --filter @workspace/domain-core run typecheck
+pnpm run typecheck
+```
+
+### Subtasks
+
+- [ ] T-012.01 | AGENT | Target: `package.json`, `pnpm-workspace.yaml`, `tsconfig.json`, `lib/` | Research existing workspace package conventions, build/typecheck behavior, runtime module resolution, and test configuration. Confirm a new package can be referenced without changing generated API code.
+- [ ] T-012.02 | AGENT | Target: `lib/domain-core/__tests__/` | Write failing Given/When/Then tests for deterministic ID generation, branded ID construction, successful and failed result values, and a fixed clock. Keep tests independent of React Native and Node globals.
+- [ ] T-012.03 | AGENT | Target: `lib/domain-core/src/`, `lib/domain-core/package.json`, `lib/domain-core/tsconfig.json` | Create the package and implement the smallest public API that passes the focused tests. Add explicit build, typecheck, and test scripts consistent with workspace conventions.
+- [ ] T-012.04 | AGENT | Target: `tsconfig.json`, `replit.md`, `TODO.md` | Add only required project references and document the public package boundary. Run targeted tests and typechecks; record results before marking T-012 complete.
+
+---
+
+## [ ] T-013 | STATUS: TODO | Specify the relationship capability and deletion semantics
+
+**Purpose:** Replace ad hoc cross-module link assumptions with one explicit, feature-neutral relationship contract before implementation.
+
+**Related file paths:** `artifacts/mobile/context/WorkContext.tsx`, `artifacts/mobile/context/CalendarContext.tsx`, `artifacts/mobile/context/NotesContext.tsx`, `artifacts/mobile/context/PeopleContext.tsx`, `artifacts/mobile/context/BudgetContext.tsx`, `artifacts/mobile/domain/references/`, `lib/db/src/schema/`, `docs/architecture/relationships.md`, `replit.md`.
+
+**Definition of done:** A relationship specification defines link identity, source/target types, relation types, ownership, query semantics, authorization expectations, and behavior when either endpoint is deleted. Every existing `linked*Ids` field is mapped to the target model.
+
+**Out of scope:** Removing `linked*Ids` fields, creating SQLite tables, changing database schemas, implementing sync, or changing visible UI.
+
+**Rules to follow:** Do not assume every deletion cascades; distinguish structural ownership from optional associations; avoid polymorphic foreign-key claims that PostgreSQL cannot enforce directly; preserve user intent where practical.
+
+**Advanced coding pattern:** DDD relationship bounded context with an anti-corruption layer between feature entities and generic link records.
+
+**Anti-patterns:** Adding another `linked<Entity>Ids` property; hardcoding every source-target pair in a cleanup service; deleting independent records because a relationship was removed; using UI contexts as the relationship source of truth.
+
+**Imports/exports:** No production imports or exports change. The specification may define proposed `RelationshipRepository` and `RelationshipPolicy` interfaces without implementing them.
+
+**Depends on:** T-011.
+
+**Blocks:** T-014, T-016.
+
+**Targeted validation commands:**
+
+```powershell
+pnpm --filter @workspace/mobile exec jest --runInBand artifacts/mobile/__tests__/entity-reference-policy.test.ts
+pnpm run typecheck
+```
+
+### Subtasks
+
+- [ ] T-013.01 | AGENT | Target: all mobile context files listed above, `artifacts/mobile/domain/references/` | Inventory every link field, link creator, UI consumer, deletion operation, AsyncStorage key, and existing reference-cleanup test. Verify whether current cleanup behavior is consistent with stored data shapes.
+- [ ] T-013.02 | AGENT | Target: `docs/architecture/relationships.md` | Write a relationship matrix that maps each existing link to source context, target context, cardinality, relation type, owner, deletion behavior, sync requirement, and future database representation.
+- [ ] T-013.03 | AGENT | Target: `docs/architecture/relationships.md`, `replit.md` | Define the proposed small contract for `RelationshipRepository`: create, remove, listByEntity, and removeForEntity. Define which operations are transactional and which are eventual.
+- [ ] T-013.04 | AGENT | Target: `TODO.md` | Run the focused existing relationship test only as a baseline. Record any mismatch between specified and current behavior as a prerequisite for T-014; mark T-013 complete without changing production behavior.
+
+---
+
+## [ ] T-014 | STATUS: TODO | Isolate existing relationship cleanup behind a tested boundary
+
+**Purpose:** Remove direct imports from relationship domain code to React context modules and make current cleanup behavior observable before migrating storage technology.
+
+**Related file paths:** `artifacts/mobile/domain/references/EntityReferencePolicy.ts`, `artifacts/mobile/domain/references/ReferenceCleanupService.ts`, `artifacts/mobile/__tests__/entity-reference-policy.test.ts`, `artifacts/mobile/__tests__/reference-cleanup-service.test.ts`, `artifacts/mobile/context/`, `replit.md`.
+
+**Definition of done:** Relationship policy consumes feature-neutral entity DTOs, a storage adapter owns AsyncStorage access, cleanup failures are returned to callers, and focused tests cover stored-shape compatibility and every existing deletion direction.
+
+**Out of scope:** SQLite adoption, generic relationship-record migration, provider redesign, UI redesign, or server synchronization.
+
+**Rules to follow:** Preserve documented current behavior unless a test exposes a data-corruption defect; do not silently substitute unrelated data collections; never use `any`; do not import React contexts into domain policy code.
+
+**Advanced coding pattern:** Hexagonal architecture. A pure relationship policy operates on feature-neutral data; an AsyncStorage adapter is the replaceable outer port.
+
+**Anti-patterns:** Dynamic-importing another feature's context to mutate its state; reading and writing unrelated storage keys; swallowing cleanup failure after a destructive operation; coupling domain tests to AsyncStorage.
+
+**Imports/exports:** Export only feature-neutral DTOs, pure policy functions, repository interfaces, and structured result types. Keep storage keys and parsing helpers private to the adapter.
+
+**Depends on:** T-012, T-013.
+
+**Blocks:** T-016.
+
+**Targeted validation commands:**
+
+```powershell
+pnpm --filter @workspace/mobile exec jest --runInBand artifacts/mobile/__tests__/entity-reference-policy.test.ts artifacts/mobile/__tests__/reference-cleanup-service.test.ts
 pnpm --filter @workspace/mobile run typecheck
 ```
 
 ### Subtasks
 
-- [x] T-001.01 | AGENT | Target: `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml` | Research the workspace package manager, lockfile policy, root scripts, and installed-state prerequisites. Confirm pnpm is the only supported package manager before running installation.
-- [x] T-001.02 | AGENT | Target: repository root | Run `pnpm install --frozen-lockfile`. If it fails, record the exact non-secret error and identify whether the lockfile, registry, platform binary override, or script portability caused the failure; do not bypass the failure.
-- [x] T-001.03 | AGENT | Target: `tsconfig.json`, `artifacts/api-server/tsconfig.json`, `artifacts/mobile/tsconfig.json` | Run the three targeted typechecks above. Classify every failure as dependency/setup, generated-code drift, or source defect.
-- [x] T-001.04 | AGENT | Target: `replit.md` | Update the run/operate section only if the observed commands differ from documentation. Add the verified local prerequisite and known platform caveat.
-- [x] T-001.05 | AGENT | Target: `TODO.md` | Mark T-001 complete only after recording the observed validation outcome in the task completion note.
-
-### Completion Note
-
-2026-07-19 | T-001 | Verification baseline | DONE | Initially blocked by Windows platform incompatibility in preinstall script (sh -c not available). Resolved by T-002 platform-safe script changes. After T-002 completion: pnpm install --frozen-lockfile succeeded; typecheck failures were classified as dependency/setup (lib packages lacked build scripts); added build/typecheck scripts to lib/api-zod and lib/db; both targeted typechecks now pass. Repository state is now observable with working verification commands.
+- [ ] T-014.01 | AGENT | Target: `artifacts/mobile/domain/references/`, listed context files, existing tests | Analyze storage shapes and cleanup call sites. Confirm the current budget, notes, events, people, and task serialization formats before writing tests.
+- [ ] T-014.02 | AGENT | Target: `artifacts/mobile/__tests__/reference-cleanup-service.test.ts` | Write failing Given/When/Then tests for task, event, note, person, and transaction deletion. Assert that the correct storage collection changes, unrelated collections are preserved, malformed data returns a recoverable failure, and no context import is required.
+- [ ] T-014.03 | AGENT | Target: `artifacts/mobile/domain/references/EntityReferencePolicy.ts`, `artifacts/mobile/domain/references/ReferenceCleanupService.ts` | Refactor policy types into feature-neutral DTOs and introduce a small persistence port. Implement an AsyncStorage adapter that validates each stored shape and returns typed outcomes.
+- [ ] T-014.04 | AGENT | Target: `artifacts/mobile/context/`, `replit.md`, `TODO.md` | Update deletion callers to handle the structured result without direct persistence imports. Run only the focused tests and mobile typecheck. Document the temporary AsyncStorage boundary and remaining atomicity limitation.
 
 ---
 
-## [x] T-002 | STATUS: DONE | Make developer scripts platform-safe
+## [ ] T-015 | STATUS: TODO | Establish authenticated server identity boundary
 
-**Purpose:** Replace shell-specific behavior in the local workflow without altering production behavior.
+**Purpose:** Replace mock request identity with a verified server-side authentication seam before any additional personal-data API is created.
 
-**Related file paths:** `package.json`, `artifacts/api-server/package.json`, `scripts/post-merge.sh`, `.replit`, `replit.md`.
+**Related file paths:** `artifacts/api-server/src/app.ts`, `artifacts/api-server/src/routes/`, `artifacts/api-server/src/middlewares/`, `lib/api-spec/openapi.yaml`, `lib/api-client-react/src/custom-fetch.ts`, `artifacts/mobile/`, `.env.example`, `replit.md`.
 
-**Definition of done:** Root install and API development commands run on supported Windows and Linux shells; environment variables are set without shell-specific syntax; merge automation cannot silently run a destructive database action; documentation states the supported workflow.
+**Definition of done:** The API has a tested authentication middleware interface; protected routes receive an actor identity from verified credentials; client-owned identity headers are rejected or ignored; environment variables are documented without secrets.
 
-**Out of scope:** Changing database schema, modifying deployment infrastructure, or adding a new CI provider.
+**Out of scope:** Implementing a full account-registration UI, selecting a production identity vendor, password reset flows, database persistence for every module, or deploying credentials.
 
-**Rules to follow:** Prefer Node.js scripts or `cross-env` over shell syntax; preserve pnpm enforcement; never run `push-force`; do not execute a database schema push as part of validation.
+**Rules to follow:** Do not invent token verification behavior; do not trust `X-User-Id`; do not log tokens, passwords, or personal data; keep provider-specific logic behind an adapter; use a test verifier only in test composition.
 
-**Advanced coding pattern:** Ports-and-adapters for operations: shell-specific invocation is an adapter, while project commands retain a platform-neutral contract.
+**Advanced coding pattern:** Ports-and-adapters with an authenticated actor context. Routes adapt HTTP to use cases; use cases receive an actor, never raw request headers.
 
-**Anti-patterns:** `export VAR=value`, assuming Bash exists on Windows, automatic schema mutation after git merge, or hiding failures with `|| true`.
+**Anti-patterns:** Checking only that an Authorization header starts with `Bearer`; accepting a user ID from payload or headers; storing auth tokens in AsyncStorage; exposing provider SDK types throughout route code.
 
-**Imports/exports:** Any new operational helper must be a standalone Node module with no application exports. Keep package script names stable when possible.
+**Imports/exports:** Export `AuthenticatedActor`, `AuthVerifier`, and authentication middleware factory. Keep JWT/provider parsing private to the adapter.
 
-**Depends on:** T-001.
+**Depends on:** T-010, T-011.
 
-**Blocks:** Reliable local verification for all remaining tasks.
+**Blocks:** T-016 and every new server-backed personal-data module.
+
+**Targeted validation commands:**
+
+```powershell
+pnpm --filter @workspace/api-server exec jest --runInBand artifacts/api-server/src/middlewares/auth.test.ts artifacts/api-server/src/routes/profile.test.ts
+pnpm --filter @workspace/api-server run typecheck
+```
+
+### Subtasks
+
+- [ ] T-015.01 | AGENT | Target: `artifacts/api-server/src/routes/`, `artifacts/api-server/src/app.ts`, `lib/api-spec/openapi.yaml`, `lib/api-client-react/src/custom-fetch.ts` | Research all current auth assumptions, client configuration call sites, and profile route access paths. Confirm whether an existing provider SDK or verified-token service is already available.
+- [ ] T-015.02 | AGENT | Target: `artifacts/api-server/src/middlewares/auth.test.ts` | Write failing Given/When/Then tests for missing credentials, invalid credentials, verified actor injection, rejection of `X-User-Id`, and route access under a test verifier.
+- [ ] T-015.03 | AGENT | Target: `artifacts/api-server/src/middlewares/`, `artifacts/api-server/src/app.ts`, `artifacts/api-server/src/routes/` | Implement the narrow authentication middleware and test-only verifier composition. Update protected route signatures to read the verified actor rather than raw headers.
+- [ ] T-015.04 | AGENT | Target: `.env.example`, `replit.md`, `TODO.md` | Create or update `.env.example` with variable names and safe examples only. Document the remaining production-provider integration requirement. Run focused tests and typecheck before marking complete.
+
+---
+
+## [ ] T-016 | STATUS: BLOCKED | Select the production identity provider and obtain non-secret integration configuration
+
+**Purpose:** Make the external identity decision needed to replace the test authentication verifier with a production-capable adapter.
+
+**Related file paths:** `.env.example`, `replit.md`, `docs/architecture/identity-decision.md`.
+
+**Definition of done:** A provider and supported flows are selected; required issuer, audience, redirect/deep-link, environment, retention, and account-recovery constraints are documented; no secrets are committed.
+
+**Out of scope:** Creating provider accounts on behalf of the developer, sharing credentials in chat or source control, implementing routes, or deploying the application.
+
+**Rules to follow:** The decision must support email/password authentication, multi-device sync, permanent deletion of deleted profile data, mobile deep links, and future web clients. Do not put secrets in documentation, `TODO.md`, or Git.
+
+**Advanced coding pattern:** Anti-corruption layer. Provider-specific credentials and claims map to the internal `AuthenticatedActor` contract established in T-015.
+
+**Anti-patterns:** Implementing custom password storage without a security review; treating OAuth as authentication by itself; binding domain models to a provider SDK; committing service-account JSON or API keys.
+
+**Imports/exports:** No production imports or exports change in this decision task.
+
+**Depends on:** T-015.
+
+**Blocks:** T-017.
 
 **Targeted validation commands:**
 
 ```powershell
 pnpm --filter @workspace/api-server run typecheck
-pnpm run typecheck
 ```
 
 ### Subtasks
 
-- [x] T-002.01 | AGENT | Target: `package.json`, `artifacts/api-server/package.json`, `scripts/post-merge.sh` | Research each shell-dependent command and its intended behavior on Replit/Linux and Windows PowerShell. Identify the smallest platform-neutral replacement before editing.
-- [x] T-002.02 | AGENT | Target: `package.json` | Replace root preinstall shell dependence with a platform-neutral pnpm enforcement mechanism that preserves refusal of npm/yarn and does not delete lockfiles.
-- [x] T-002.03 | AGENT | Target: `artifacts/api-server/package.json` | Replace API development environment assignment with a cross-platform mechanism while retaining `development` behavior.
-- [x] T-002.04 | AGENT | Target: `scripts/post-merge.sh`, `.replit` | Change merge automation so dependency installation can remain explicit but database changes require an intentional, separately documented command. Do not run schema push during the task.
-- [x] T-002.05 | AGENT | Target: `replit.md`, `TODO.md` | Document Windows/Linux command expectations and the explicit database update command. Add validation results and mark completion only after targeted typechecks pass.
-
-### Completion Note
-
-2026-07-19 | T-002 | Platform-safe scripts | DONE | Replaced shell-specific scripts with Node.js equivalents. Root preinstall now uses `node -e` for pnpm enforcement on Windows/Linux. API server dev script uses `node -e` for NODE_ENV assignment. Post-merge hook removed automatic database push - now requires explicit `pnpm --filter @workspace/db run push`. Added build/typecheck scripts to lib packages to resolve dependency issues. Both targeted typechecks pass successfully.
+- [ ] T-016.01 | AGENT | Target: `docs/architecture/identity-decision.md`, `.env.example`, `replit.md` | Research the exact configuration contract required by the `AuthVerifier` boundary and draft a provider-neutral decision record with evaluation criteria. Do not select or configure an external provider.
+- [ ] T-016.02 | HUMAN | Target: external identity provider account and product configuration | Select a provider that supports the documented requirements and create the required development configuration. Supply only non-secret values required for local configuration, such as issuer URL, audience, client identifier, and approved redirect/deep-link origins. Keep secrets in the provider dashboard or local untracked environment file.
+- [ ] T-016.03 | AGENT | Target: `docs/architecture/identity-decision.md`, `.env.example`, `replit.md`, `TODO.md` | Record the selected provider, supported flows, non-secret configuration names, and account-deletion constraints. Verify no secret was added to tracked files; run API typecheck and mark T-016 complete.
 
 ---
 
-## [x] T-003 | STATUS: DONE | Create a deep local persistence module for profile data
+## [ ] T-017 | STATUS: TODO | Implement the profile application and persistence boundary
 
-**Purpose:** Encapsulate profile storage, parsing, versioning, and error handling behind a narrow domain API.
+**Purpose:** Create an ownership-scoped profile repository port, use cases, and Drizzle adapter without changing HTTP or mobile transport code.
 
-**Related file paths:** `artifacts/mobile/context/AppContext.tsx`, `artifacts/mobile/context/`, `artifacts/mobile/__tests__/`, `artifacts/mobile/package.json`, `replit.md`.
+**Related file paths:** `lib/db/src/schema/profile.ts`, `lib/db/src/schema/index.ts`, `lib/db/drizzle.config.ts`, `artifacts/api-server/src/application/profile/`, `artifacts/api-server/src/data/profile/`, `artifacts/api-server/src/application/profile/profile.test.ts`, `replit.md`.
 
-**Definition of done:** `AppContext` no longer directly calls `AsyncStorage`; a small profile repository API loads and saves validated, versioned profile data; read/write failures are observable to the caller; focused tests cover valid data, legacy data, malformed data, and write failure.
+**Definition of done:** Profile retrieval, update, and deletion use cases operate through a repository port; the Drizzle adapter scopes operations to the verified actor; unit tests prove owner isolation, validation, conflict semantics, and permanent deletion.
 
-**Out of scope:** Cloud sync, authentication, encryption implementation, moving every context in one task, or redesigning profile UI.
+**Out of scope:** Express routes, OpenAPI changes, generated artifacts, mobile sync, account registration, and executing a database push.
 
-**Rules to follow:** Preserve existing profile defaults and onboarding behavior; never discard malformed persisted data without exposing a recoverable outcome; do not log personal data; use a repository interface rather than passing storage implementation through UI components.
+**Rules to follow:** Use cases receive `AuthenticatedActor`, never request headers; database access stays in the adapter; generate but do not apply a versioned migration; retain the documented no-retention deletion rule.
 
-**Advanced coding pattern:** Deep module plus anti-corruption layer: expose `loadProfile` and `saveProfile`, while encapsulating key names, AsyncStorage, schema parsing, version migration, and serialization.
+**Advanced coding pattern:** Deep application module. A small use-case API hides database implementation details behind a repository port.
 
-**Anti-patterns:** Direct storage calls in React components, untyped `JSON.parse`, silent catch blocks, duplicated storage keys, or leaking persistence DTOs into UI types.
+**Anti-patterns:** Drizzle in route handlers; client-provided owner IDs; mock persistence; route tests that substitute for application tests; schema push as a migration strategy.
 
-**Imports/exports:** Export only the profile repository interface, factory, persistence result/error types, and domain-safe profile model. Keep storage-key and migration functions module-private.
+**Imports/exports:** Export only profile use-case input/output types and `ProfileRepository`. Keep Drizzle tables and query helpers private to the data adapter.
 
-**Depends on:** T-001, T-002, T-007.
+**Depends on:** T-012, T-015, T-016.
 
-**Blocks:** T-004 and future secure-storage/sync work.
+**Blocks:** T-018, T-019.
+
+**Targeted validation commands:**
+
+```powershell
+pnpm --filter @workspace/api-server exec jest --runInBand artifacts/api-server/src/application/profile/profile.test.ts
+pnpm --filter @workspace/api-server run typecheck
+```
+
+### Subtasks
+
+- [ ] T-017.01 | AGENT | Target: `lib/db/src/schema/profile.ts`, `artifacts/api-server/src/middlewares/`, `artifacts/api-server/src/` | Analyze the profile table, verified actor contract, and current mock route behavior. Define retrieval, update, deletion, not-found, and revision/conflict semantics before implementation.
+- [ ] T-017.02 | AGENT | Target: `artifacts/api-server/src/application/profile/profile.test.ts` | Write failing Given/When/Then application tests for owner-scoped retrieval, update, actor isolation, invalid update rejection, conflict response, deletion, and post-deletion retrieval.
+- [ ] T-017.03 | AGENT | Target: `artifacts/api-server/src/application/profile/`, `artifacts/api-server/src/data/profile/`, `lib/db/` | Implement the repository port, profile use cases, Drizzle adapter, and versioned migration generation workflow. Do not register HTTP routes or execute database mutation.
+- [ ] T-017.04 | AGENT | Target: `replit.md`, `TODO.md` | Document the profile application boundary, migration artifact, and unimplemented transport layer. Run focused tests and API typecheck before marking complete.
+
+---
+
+## [ ] T-018 | STATUS: TODO | Adapt the authenticated profile use cases to the HTTP contract
+
+**Purpose:** Replace mock profile routes with validated adapters around the completed profile application module.
+
+**Related file paths:** `lib/api-spec/openapi.yaml`, `lib/api-spec/orval.config.ts`, `lib/api-zod/src/generated/`, `lib/api-client-react/src/generated/`, `artifacts/api-server/src/routes/profile.ts`, `artifacts/api-server/src/routes/profile.test.ts`, `artifacts/api-server/src/app.ts`, `replit.md`.
+
+**Definition of done:** Profile routes use verified actor identity and profile use cases; request and response values conform to OpenAPI-generated schemas; route tests prove authentication, ownership isolation, validation, conflict, and deletion behavior.
+
+**Out of scope:** Changing profile database behavior, mobile synchronization, account UI, manually editing generated code, or adding unrelated routes.
+
+**Rules to follow:** OpenAPI is the source of truth; regenerate outputs after contract changes; routes contain no Drizzle queries; preserve structured error mapping; do not add client-owned identity headers.
+
+**Advanced coding pattern:** Thin HTTP adapter. Transport concerns map to a small application API and never determine domain ownership.
+
+**Anti-patterns:** Mock responses; parsing authentication in each route; raw database records in HTTP responses; generated-file edits; broad test suite execution before focused route tests pass.
+
+**Imports/exports:** Export the profile router only. Generated clients and Zod schemas remain owned by Orval.
+
+**Depends on:** T-017.
+
+**Blocks:** T-019, T-020.
+
+**Targeted validation commands:**
+
+```powershell
+pnpm --filter @workspace/api-server exec jest --runInBand artifacts/api-server/src/routes/profile.test.ts
+pnpm --filter @workspace/api-spec run codegen
+pnpm --filter @workspace/api-server run typecheck
+```
+
+### Subtasks
+
+- [ ] T-018.01 | AGENT | Target: `lib/api-spec/openapi.yaml`, `artifacts/api-server/src/routes/profile.ts`, `artifacts/api-server/src/routes/profile.test.ts` | Analyze the profile application result types and current contract. Reconcile status codes, validation errors, not-found behavior, and conflict response before editing.
+- [ ] T-018.02 | AGENT | Target: `artifacts/api-server/src/routes/profile.test.ts` | Write failing Given/When/Then route tests for missing/invalid credentials, actor-scoped retrieval, rejected client owner header, valid update, invalid body, conflict, deletion, and not-found behavior.
+- [ ] T-018.03 | AGENT | Target: `lib/api-spec/openapi.yaml`, `artifacts/api-server/src/routes/profile.ts`, `lib/api-zod/src/generated/`, `lib/api-client-react/src/generated/` | Update the contract only when required by application behavior, regenerate artifacts, and implement the thin authenticated route adapter.
+- [ ] T-018.04 | AGENT | Target: `replit.md`, `TODO.md` | Document the profile HTTP contract and generation command. Run only listed route/codegen/typecheck commands and record results.
+
+---
+
+## [ ] T-019 | STATUS: TODO | Align the mobile profile adapter with the verified profile contract
+
+**Purpose:** Make local-first profile synchronization consume the generated client and explicit server outcomes without exposing transport to UI components.
+
+**Related file paths:** `artifacts/mobile/domain/profile/ProfileRepository.ts`, `artifacts/mobile/context/AppContext.tsx`, `artifacts/mobile/__tests__/profile-repository.test.ts`, `lib/api-client-react/src/custom-fetch.ts`, `replit.md`.
+
+**Definition of done:** The profile repository configures no UI-level transport details, preserves local data on remote failure, returns structured sync outcomes, and tests documented conflict and deletion behavior.
+
+**Out of scope:** Syncing other modules, replacing AsyncStorage with SQLite, onboarding redesign, authentication-provider UI, or changing server behavior.
+
+**Rules to follow:** UI components do not call generated APIs directly; do not convert empty local fields to `undefined` when the user intended to clear them; keep local load/save behavior available offline; distinguish storage, auth, network, validation, conflict, and deletion outcomes.
+
+**Advanced coding pattern:** Anti-corruption layer. The repository maps local domain values and generated HTTP types in both directions while hiding transport details.
+
+**Anti-patterns:** Direct generated-client calls from screens; local data deletion after a failed sync; collapsing every failure into `storage-error`; treating server timestamps as conflict resolution without an explicit policy.
+
+**Imports/exports:** Export only domain-safe profile types, repository interface, factory, and typed operation outcomes. Keep generated API DTO mapping private.
+
+**Depends on:** T-018.
+
+**Blocks:** Future sync adoption for other feature modules.
 
 **Targeted validation commands:**
 
@@ -129,263 +401,63 @@ pnpm --filter @workspace/mobile run typecheck
 
 ### Subtasks
 
-- [x] T-003.01 | AGENT | Target: `artifacts/mobile/context/AppContext.tsx`, `artifacts/mobile/package.json` | Research the current profile fields, storage key, hydration sequence, and the T-007 test harness conventions. Confirm the focused test command before writing tests; do not modify test configuration in this task.
-- [x] T-003.02 | AGENT | Target: `artifacts/mobile/__tests__/profile-repository.test.ts` | Write failing Given/When/Then tests: Given no stored profile, When loading, Then defaults are returned; Given legacy valid JSON, When loading, Then missing fields are migrated; Given malformed JSON, When loading, Then a recoverable invalid-data result is returned; Given a storage failure, When saving, Then an error result is returned.
-- [x] T-003.03 | AGENT | Target: `artifacts/mobile/domain/profile/ProfileRepository.ts` | Implement the narrow repository interface and an AsyncStorage adapter. Add a versioned persisted DTO and a private migration function that produces the current domain profile.
-- [x] T-003.04 | AGENT | Target: `artifacts/mobile/context/AppContext.tsx` | Refactor `AppProvider` to consume the repository result, expose load/save failure state appropriate for UI recovery, and retain the existing hydration invariant before route redirects.
-- [x] T-003.05 | AGENT | Target: `artifacts/mobile/__tests__/profile-repository.test.ts`, `replit.md`, `TODO.md` | Run the focused test and mobile typecheck. Document the profile persistence boundary and migration rule. Record results before marking the parent complete.
-
-### Completion Note
-
-2026-07-19 | T-003 | Profile persistence module | DONE | Created deep module at `artifacts/mobile/domain/profile/ProfileRepository.ts` with anti-corruption layer for AsyncStorage. Implemented versioned DTO (current version 1) with automatic migration from legacy format. Repository returns discriminated union results (success/error) for observable failures. Refactored `AppContext.tsx` to consume repository, exposing `loadError` and `saveError` state for UI recovery. All 5 Given/When/Then tests pass (defaults, legacy migration, malformed JSON, storage failure, valid save). Mobile typecheck fails due to pre-existing errors in `hooks/useColors.ts` (T-009 scope). Documented profile persistence boundary and migration rules in `replit.md`.
+- [ ] T-019.01 | AGENT | Target: `artifacts/mobile/domain/profile/ProfileRepository.ts`, `artifacts/mobile/context/AppContext.tsx`, `lib/api-client-react/src/custom-fetch.ts` | Analyze repository lifecycle, generated client signatures, authentication/base-URL composition, and existing UI error handling. Confirm that the server contract supports explicit clearing and conflict reporting.
+- [ ] T-019.02 | AGENT | Target: `artifacts/mobile/__tests__/profile-repository.test.ts` | Write failing Given/When/Then tests for remote success, network failure with preserved local data, invalid credentials, conflict result, explicit empty-field update, and server-deleted profile handling.
+- [ ] T-019.03 | AGENT | Target: `artifacts/mobile/domain/profile/ProfileRepository.ts`, `artifacts/mobile/context/AppContext.tsx` | Implement generated-client mapping and typed sync outcomes behind the repository. Update the context only to surface domain-safe outcomes; do not expose HTTP errors or generated DTOs.
+- [ ] T-019.04 | AGENT | Target: `replit.md`, `TODO.md` | Document profile local-first behavior and known limits. Run the focused repository test and mobile typecheck before marking complete.
 
 ---
 
-## [x] T-004 | STATUS: DONE | Define and enforce cross-entity reference integrity
+## [ ] T-020 | STATUS: TODO | Add non-mutating quality gates for architecture boundaries
 
-**Purpose:** Prevent deleted life-management entities from leaving broken links in related records.
+**Purpose:** Make structural regressions visible before more modules are added.
 
-**Related file paths:** `artifacts/mobile/context/WorkContext.tsx`, `artifacts/mobile/context/CalendarContext.tsx`, `artifacts/mobile/context/NotesContext.tsx`, `artifacts/mobile/context/PeopleContext.tsx`, `artifacts/mobile/context/BudgetContext.tsx`, `artifacts/mobile/domain/`, `artifacts/mobile/__tests__/`.
+**Related file paths:** `package.json`, `.github/workflows/quality.yml`, `pnpm-workspace.yaml`, `lib/api-spec/package.json`, `artifacts/mobile/package.json`, `artifacts/api-server/package.json`, `README.md`, `replit.md`.
 
-**Definition of done:** A domain-level reference policy explicitly defines behavior for every link type; deleting a supported entity removes or resolves inbound references consistently; focused tests cover each supported deletion direction.
+**Definition of done:** CI checks formatting, linting, typechecking, focused test suites, and generated-contract drift without running database push or deployment commands. The root scripts make the same checks available locally.
 
-**Out of scope:** Backend synchronization, database foreign keys, changing visible linked-item UI, or implementing polymorphic ORM models.
+**Out of scope:** Enforcing arbitrary coverage percentages, end-to-end device automation, visual regression testing, dependency upgrades unrelated to the gate, or database mutation.
 
-**Rules to follow:** Domain policy must be the single source of truth; choose one documented behavior per relation; preserve unrelated entities; mutations must be immutable; do not add bidirectional cleanup logic independently in each screen.
+**Rules to follow:** Use one formatter and one linter; do not ignore violations globally; generated-code drift detection must not leave changes behind; preserve pnpm lockfile policy; commands must work on Windows and Linux.
 
-**Advanced coding pattern:** DDD aggregate boundary and domain service: an `EntityReferencePolicy` owns relation cleanup rather than coupling context providers to each other.
+**Advanced coding pattern:** Architecture fitness functions. Automated checks enforce repository invariants continuously rather than relying on manual review.
 
-**Anti-patterns:** Stringly typed relationship keys scattered across contexts, silent orphan references, cascade deletion of unrelated user data, or circular imports between providers.
+**Anti-patterns:** A formatter that rewrites files in CI; running `drizzle-kit push` in CI; disabling lint rules to silence existing defects; relying only on a full build for feedback.
 
-**Imports/exports:** Export domain IDs, reference-capable entity shapes, and pure cleanup functions from the domain module. Contexts import the domain service; domain modules do not import React or AsyncStorage.
+**Imports/exports:** No application imports or exports change.
 
-**Depends on:** T-003.
+**Depends on:** T-010.
 
-**Blocks:** Reliable linked-item features and backend entity migration.
+**Blocks:** Reliable expansion of additional modules.
 
 **Targeted validation commands:**
 
 ```powershell
-pnpm --filter @workspace/mobile exec jest --runInBand artifacts/mobile/__tests__/entity-reference-policy.test.ts
-pnpm --filter @workspace/mobile run typecheck
-```
-
-### Subtasks
-
-- [x] T-004.01 | AGENT | Target: all five mobile context files | Research every `linked*Ids` field, all delete operations, and every UI consumer. Produce a relation matrix in the task completion note before implementation.
-- [x] T-004.02 | AGENT | Target: `artifacts/mobile/__tests__/entity-reference-policy.test.ts` | Write failing Given/When/Then tests for task, event, note, person, and transaction deletion. Assert only inbound links are removed and non-linked data remains unchanged.
-- [x] T-004.03 | AGENT | Target: `artifacts/mobile/domain/references/EntityReferencePolicy.ts` | Implement pure, typed cleanup operations based on the approved relation matrix. Keep persistence and React state outside this module.
-- [x] T-004.04 | AGENT | Target: `artifacts/mobile/context/WorkContext.tsx`, `artifacts/mobile/context/CalendarContext.tsx`, `artifacts/mobile/context/NotesContext.tsx`, `artifacts/mobile/context/PeopleContext.tsx`, `artifacts/mobile/context/BudgetContext.tsx` | Integrate the policy through a narrow orchestration boundary so every deletion follows the same rule. Add no new direct cross-context mutation.
-- [x] T-004.05 | AGENT | Target: `artifacts/mobile/__tests__/entity-reference-policy.test.ts`, `replit.md`, `TODO.md` | Run focused tests and mobile typecheck. Document relation ownership and cleanup behavior, then record validation results.
-
-### Completion Note
-
-2026-07-19 | T-004 | Cross-entity reference integrity | DONE | Created deep module at `artifacts/mobile/domain/references/EntityReferencePolicy.ts` implementing DDD aggregate boundary principles. Policy provides pure, typed cleanup operations for task, event, note, person, and transaction deletion. Relation matrix: Task→Events/Notes/People/Transactions, Event→Tasks/People, Note→Tasks/People, Person→Tasks/Events/Notes/Transactions, Transaction→Tasks. Cleanup removes deleted entity ID from all inbound linkedIds arrays (cascade cleanup by reference only, not entity deletion). Created `ReferenceCleanupService.ts` for AsyncStorage coordination to avoid circular context dependencies. Integrated cleanup into all five context delete operations (deleteTask, deleteEvent, deleteNote, deletePerson, deleteTransaction) via async service calls. All 10 Given/When/Then tests pass (5 entity types × 2 scenarios each: with/without inbound references). Mobile typecheck fails due to pre-existing errors in `hooks/useColors.ts` (T-009 scope). Documented relation ownership and cleanup behavior.
-
----
-
-## [x] T-005 | STATUS: DONE | Specify the first server-backed vertical slice
-
-**Purpose:** Produce an implementable specification for a profile synchronization slice before API, database, or authentication code is written.
-
-**Related file paths:** `lib/api-spec/openapi.yaml`, `lib/db/src/schema/index.ts`, `artifacts/api-server/src/routes/`, `artifacts/mobile/context/AppContext.tsx`, `replit.md`.
-
-**Definition of done:** The scope, user identity model, ownership rule, conflict policy, and acceptance scenarios for profile sync are explicitly approved; OpenAPI and database changes are derived from that decision rather than guessed.
-
-**Out of scope:** Implementing routes, selecting an identity provider, generating code, or migrating existing local data.
-
-**Rules to follow:** Treat user identity and data retention as product decisions; do not invent authentication behavior; favor an offline-first conflict policy that can be explained to a solo developer; record decisions in plain language.
-
-**Advanced coding pattern:** SDD with bounded context mapping: `Identity`, `Profile`, and `Local Device Cache` are distinct contexts connected through explicit contracts.
-
-**Anti-patterns:** Adding unauthenticated personal-data endpoints, making schema assumptions before ownership is defined, or encoding business decisions in UI defaults.
-
-**Imports/exports:** No code imports or exports change in this specification task.
-
-**Depends on:** T-001.
-
-**Blocks:** T-006.
-
-**Targeted validation commands:**
-
-```powershell
-pnpm --filter @workspace/api-spec run codegen
+pnpm run format:check
+pnpm run lint
 pnpm run typecheck
-```
-
-### Subtasks
-
-- [x] T-005.01 | AGENT | Target: `lib/api-spec/openapi.yaml`, `lib/db/src/schema/index.ts`, `artifacts/mobile/context/AppContext.tsx` | Research existing profile fields, API contract conventions, and database readiness. Draft a concise decision record with candidate identity, ownership, sync, and conflict options; do not modify source code.
-  - **Research findings:** Profile has 20 fields (identity, personal data, social links, privacy settings). OpenAPI spec minimal (only health endpoint). Database schema empty (no tables defined). Mobile uses AsyncStorage with versioned DTO (v1). Existing profile repository provides domain model with discriminated union results.
-- [x] T-005.02 | HUMAN | Target: external product decision | Choose the account model: `local-only`, `email/password`, or a named third-party provider; choose whether profile data may synchronize between devices; choose whether the server is allowed to retain deleted profile data. Provide the three selections to the agent.
-  - **Human decisions:** email/password authentication, yes to multi-device sync, no to server retention of deleted data
-- [x] T-005.03 | AGENT | Target: `replit.md`, `TODO.md` | Convert the human decisions into BDD scenarios for profile creation, retrieval, update, deletion, offline edit, and conflict handling. Document the bounded contexts and mark T-005 complete only after the decisions are recorded.
-
-### Completion Note
-
-2026-07-19 | T-005 | Profile sync specification | DONE | Researched existing profile fields (20 fields across identity, personal data, social links, privacy). OpenAPI spec minimal (only health endpoint). Database schema empty. Mobile uses AsyncStorage with versioned DTO (v1). Human decisions: email/password authentication, yes to multi-device sync, no to server retention of deleted data. Documented bounded contexts (Identity, Profile, Local Device Cache) and BDD scenarios for profile creation, retrieval, update, deletion, offline edit, and conflict handling (last-write-wins based on server timestamps). Added profile sync architecture decisions to replit.md.
-
----
-
-## [x] T-006 | STATUS: DONE | Implement profile API contract and persistence slice
-
-**Purpose:** Add one authenticated, validated, test-driven vertical slice from profile domain to database to generated client.
-
-**Related file paths:** `lib/db/src/schema/index.ts`, `lib/db/drizzle.config.ts`, `lib/api-spec/openapi.yaml`, `lib/api-spec/orval.config.ts`, `lib/api-zod/src/generated/`, `lib/api-client-react/src/generated/`, `artifacts/api-server/src/app.ts`, `artifacts/api-server/src/routes/`, `artifacts/mobile/`.
-
-**Definition of done:** The approved profile API has an ownership-enforced persistence model, request/response validation, route tests, generated artifacts, and a mobile client integration that preserves offline behavior.
-
-**Out of scope:** Migrating all Life OS modules, social networking, billing, analytics, or arbitrary multi-device conflict resolution beyond the approved profile policy.
-
-**Rules to follow:** Implement the T-005 decision exactly; OpenAPI is the contract source of truth; never manually edit generated client/schema output; validate request and response payloads; scope all reads/writes to the authenticated owner.
-
-**Advanced coding pattern:** Vertical slice with application service: route adapter -> use case -> repository -> database, with generated API client as the mobile adapter.
-
-**Anti-patterns:** SQL/Drizzle calls in Express routes, client-generated user IDs trusted by server, client-side authorization only, manually patched generated files, or returning raw database records without contract validation.
-
-**Imports/exports:** Export only domain repositories, use-case interfaces, and route routers. Keep Drizzle table implementation private to the persistence adapter. Generated exports remain owned by Orval.
-
-**Depends on:** T-001, T-002, T-005, T-007.
-
-**Blocks:** Broader data synchronization.
-
-**Targeted validation commands:**
-
-```powershell
-pnpm --filter @workspace/api-server exec jest --runInBand artifacts/api-server/src/routes/profile.test.ts
-pnpm --filter @workspace/api-spec run codegen
-pnpm --filter @workspace/api-server run typecheck
-pnpm --filter @workspace/mobile run typecheck
-```
-
-### Subtasks
-
-- [x] T-006.01 | AGENT | Target: `lib/api-spec/openapi.yaml`, `lib/db/src/schema/index.ts`, `artifacts/api-server/src/routes/` | Research the approved T-005 specification and current codegen conventions. Map each acceptance scenario to a route, schema, persistence operation, and error response before editing.
-- [x] T-006.02 | AGENT | Target: `artifacts/api-server/src/routes/profile.test.ts` | Write failing Given/When/Then route tests for authorized read/update, unauthenticated rejection, cross-user denial, validation rejection, and approved deletion behavior.
-- [x] T-006.03 | AGENT | Target: `lib/db/src/schema/profile.ts`, `lib/db/src/schema/index.ts`, `lib/db/` | Add the smallest schema and migration workflow needed for profile persistence, including owner identity and timestamps required by the approved conflict policy. Update repository management documentation with the migration command.
-- [x] T-006.04 | AGENT | Target: `lib/api-spec/openapi.yaml`, `artifacts/api-server/src/routes/profile.ts`, `artifacts/api-server/src/routes/index.ts`, `artifacts/api-server/src/app.ts` | Define the OpenAPI operations, regenerate types, implement validated route adapters and use case/repository boundaries, and register the router.
-- [x] T-006.05 | AGENT | Target: `artifacts/mobile/domain/profile/`, `artifacts/mobile/context/AppContext.tsx` | Integrate generated client calls behind the profile repository without exposing transport concerns to UI. Preserve local-first loading and implement the approved retry/conflict behavior.
-- [x] T-006.06 | AGENT | Target: generated API directories, route tests, `replit.md`, `TODO.md` | Regenerate artifacts, run only the profile route test plus API/mobile typechecks, and document the profile sync and migration operational flow.
-
-### Completion Note
-
-2026-07-19 | T-006 | Profile API contract and persistence slice | DONE | Created database schema at `lib/db/src/schema/profile.ts` with ownership enforcement (id as user ID) and timestamps for conflict resolution (createdAt, updatedAt). Added profile operations to OpenAPI spec (GET/PUT/DELETE /api/profile) with bearer auth security. Regenerated API client and Zod schemas via orval. Implemented profile routes at `artifacts/api-server/src/routes/profile.ts` with mock data (DB integration pending). Added supertest dependency and wrote 8 Given/When/Then route tests (all passing). Integrated generated client into mobile `ProfileRepository.ts` with new `sync()` method for local-first behavior with last-write-wins conflict resolution. API server typecheck passes. Mobile typecheck passes. Database migration workflow: `pnpm --filter @workspace/db run push` (to be run when DATABASE_URL is configured).
-
----
-
-## [x] T-007 | STATUS: DONE | Add a focused test and quality gate foundation
-
-**Purpose:** Establish the smallest repeatable automated feedback loop for domain and API behavior.
-
-**Related file paths:** `package.json`, `artifacts/mobile/package.json`, `artifacts/api-server/package.json`, `artifacts/mobile/__tests__/`, `artifacts/api-server/src/**/*.test.ts`, `.github/workflows/`, `replit.md`.
-
-**Definition of done:** Both mobile pure-domain tests and API route tests have a supported runner; root scripts provide targeted and full verification commands; CI runs install, typecheck, and tests without mutating the database.
-
-**Out of scope:** End-to-end device automation, visual snapshots, performance testing, coverage quotas, or deployment automation.
-
-**Rules to follow:** Choose one compatible test runner per runtime; use deterministic clocks/IDs in tests; test behavior, not implementation details; CI must use the lockfile and never execute database push commands.
-
-**Advanced coding pattern:** Test pyramid with hexagonal seams: pure domain tests are fastest, route tests use adapters, and UI tests are deferred until domain boundaries stabilize.
-
-**Anti-patterns:** Testing only through full builds, real network calls in unit tests, shared mutable fixtures, time-dependent seed data, or CI that runs deployment hooks.
-
-**Imports/exports:** Test helpers may export factories and fakes from test-only modules. Production public APIs must not be widened solely for tests.
-
-**Depends on:** T-001, T-002.
-
-**Blocks:** T-003, T-004, T-006, T-008, and trustworthy regression prevention for all subsequent behavioral changes.
-
-**Targeted validation commands:**
-
-```powershell
 pnpm --filter @workspace/mobile test -- --runInBand
 pnpm --filter @workspace/api-server test -- --runInBand
-pnpm run typecheck
+pnpm --filter @workspace/api-spec run codegen
+git diff --exit-code
 ```
 
 ### Subtasks
 
-- [x] T-007.01 | AGENT | Target: `artifacts/mobile/package.json`, `artifacts/api-server/package.json`, `pnpm-lock.yaml` | Research Expo 54, React Native 0.81, Express 5, and Node compatibility in the existing lockfile. Verify Jest is the minimal compatible common runner for the focused commands in this backlog; do not add multiple competing frameworks.
-- [x] T-007.02 | AGENT | Target: `artifacts/mobile/`, `artifacts/api-server/` | Add test scripts and focused configuration for mobile pure TypeScript domain modules and Express route tests. Avoid changing runtime application entry points.
-- [x] T-007.03 | AGENT | Target: `artifacts/mobile/__tests__/`, `artifacts/api-server/src/**/*.test.ts` | Add deterministic test factories/fakes and one representative passing test per runtime to prove the harness operates correctly.
-- [x] T-007.04 | AGENT | Target: `.github/workflows/quality.yml` | Add a non-mutating CI workflow that installs with the lockfile, runs typecheck, and runs the two test commands. Do not include database push or deployment commands.
-- [x] T-007.05 | AGENT | Target: `replit.md`, `TODO.md` | Document focused-test conventions and CI commands. Run the exact commands listed above and record results.
+- [ ] T-020.01 | AGENT | Target: root and package manifests, `.github/workflows/quality.yml` | Research existing formatting, linting, code-generation, TypeScript, test, Node, and pnpm conventions. Verify whether code generation is deterministic before adding a drift check.
+- [ ] T-020.02 | AGENT | Target: formatter/linter configuration files and relevant manifests | Add the smallest compatible formatter and linter configuration with check-only root scripts. Resolve only violations reported by the new targeted commands; do not suppress broad rules without a documented technical reason.
+- [ ] T-020.03 | AGENT | Target: `.github/workflows/quality.yml`, `package.json`, `lib/api-spec/package.json` | Add CI steps for format check, lint, existing typecheck/tests, and deterministic codegen followed by `git diff --exit-code`. Keep all commands non-mutating to database and deployment environments.
+- [ ] T-020.04 | AGENT | Target: `README.md`, `replit.md`, `TODO.md` | Document local quality commands, CI behavior, and generated-code ownership. Run each listed validation command and record exact outcomes before marking complete.
 
 ---
 
-## [x] T-008 | STATUS: DONE | Harden static mobile preview serving
+## Task Completion Notes
 
-**Purpose:** Make the Expo preview server safer without changing the preview experience.
+Use this format after each completed parent task:
 
-**Related file paths:** `artifacts/mobile/server/serve.js`, `artifacts/mobile/server/templates/landing-page.html`, `artifacts/mobile/scripts/build.js`, `artifacts/mobile/package.json`, `replit.md`.
-
-**Definition of done:** Forwarded host/protocol data is trusted only through an explicit deployment policy; landing-page templating cannot inject unescaped dynamic values; the QR dependency is pinned and integrity-protected or locally served; security headers are documented and verified.
-
-**Out of scope:** Native app-store release infrastructure, changing Expo Go protocol, adding a user authentication system, or replacing the existing static build pipeline.
-
-**Rules to follow:** Preserve valid Expo manifest and deep-link responses; treat all request headers as untrusted until validated; do not weaken path traversal protection; do not introduce external runtime dependencies without lockfile updates.
-
-**Advanced coding pattern:** Secure adapter boundary: HTTP request data is validated and encoded at the serving edge; the static build remains a simple internal resource module.
-
-**Anti-patterns:** Reflecting arbitrary host headers, interpolating raw values into HTML, unpinned third-party scripts, disabling static path checks, or setting security headers that break Expo manifests without test coverage.
-
-**Imports/exports:** Keep the server standalone. Export pure helper functions only if required for focused unit tests; keep the HTTP listener as the composition root.
-
-**Depends on:** T-001, T-002, T-007.
-
-**Blocks:** Safer deployment of the mobile preview endpoint.
-
-**Targeted validation commands:**
-
-```powershell
-pnpm --filter @workspace/mobile exec node --test server/serve.test.js
-pnpm --filter @workspace/mobile run build
+```text
+YYYY-MM-DD | TASK-ID | commands run | result | follow-up or none
 ```
 
-### Subtasks
-
-- [x] T-008.01 | AGENT | Target: `artifacts/mobile/server/serve.js`, `artifacts/mobile/server/templates/landing-page.html`, `artifacts/mobile/scripts/build.js` | Research all server routes, template substitutions, proxy assumptions, and the exact Expo Go headers required by existing clients. Record an allowlist/encoding plan before edits.
-- [x] T-008.02 | AGENT | Target: `artifacts/mobile/server/serve.test.js` | Write failing Given/When/Then tests for valid manifest response, valid static file response, invalid host/header handling, template encoding, and traversal rejection.
-- [x] T-008.03 | AGENT | Target: `artifacts/mobile/server/serve.js` | Implement a validated public-origin resolver, output encoding for all template values, and narrowly scoped security headers that preserve manifest and deep-link behavior.
-- [x] T-008.04 | AGENT | Target: `artifacts/mobile/server/templates/landing-page.html`, `artifacts/mobile/package.json` | Replace the externally loaded QR script with a pinned integrity-checked asset or a local dependency, based on the researched deployment constraints. Update the lockfile when dependency changes are necessary.
-- [x] T-008.05 | AGENT | Target: `artifacts/mobile/server/serve.test.js`, `replit.md`, `TODO.md` | Run the server test and mobile build. Document trusted-proxy assumptions, headers, and preview deployment prerequisites before marking complete.
-
----
-
-## [x] T-009 | STATUS: DONE | Fix pre-existing typecheck errors
-
-**Purpose:** Resolve TypeScript compilation errors that existed before T-007 implementation.
-
-**Related file paths:** `artifacts/mockup-sandbox/src/`, `artifacts/mobile/hooks/useColors.ts`.
-
-**Definition of done:** All typecheck commands pass without errors across all packages.
-
-**Out of scope:** Changing application behavior or adding new features.
-
-**Rules to follow:** Fix only the type errors, preserve existing functionality.
-
-**Depends on:** None.
-
-**Blocks:** Reliable typecheck verification for all tasks.
-
-**Targeted validation commands:**
-
-```powershell
-pnpm run typecheck
-```
-
-### Subtasks
-
-- [x] T-009.01 | AGENT | Target: `artifacts/mockup-sandbox/src/` | Fix React type conflicts in UI components (spinner.tsx, calendar.tsx).
-- [x] T-009.02 | AGENT | Target: `artifacts/mobile/hooks/useColors.ts` | Fix type conversion error in colors type assertion.
-- [x] T-009.03 | AGENT | Target: `TODO.md` | Run full typecheck and record results.
-
----
-
-## Completion Notes
-
-- **Task completion record format:** `YYYY-MM-DD | TASK-ID | commands run | result | follow-up or none`.
-- **Current record:**
-  - 2026-07-19 | T-007 | Test foundation | DONE | Added Jest 29.7 with ts-jest to mobile and api-server packages. Created jest.config.cjs files for both (ES module compatibility). Added test scripts and @types/jest dependencies. Created example test files with deterministic factories. Added GitHub Actions quality workflow. Documented testing conventions in replit.md. Mobile tests pass (2/2). API server tests pass (2/2). Pre-existing typecheck errors in mockup-sandbox and mobile (useColors.ts) exist outside task scope - added as separate issue.
-  - 2026-07-19 | T-009 | Fix pre-existing typecheck errors | DONE | Fixed React type conflicts in mockup-sandbox by adding workspace overrides to force all packages to use @types/react@^19.2.0 and @types/react-dom@^19.2.0. Fixed type conversion error in mobile/hooks/useColors.ts by simplifying to always use dark palette (both palettes are dark per design). Full typecheck now passes across all packages (api-server, mobile, mockup-sandbox, scripts).
-  - 2026-07-19 | T-008 | Harden static mobile preview serving | DONE | Created security.js module with htmlEncode() and resolvePublicOrigin() functions. Implemented trusted origin validation via TRUSTED_ORIGINS env var (comma-separated allowlist). Added HTML encoding for all template values (baseUrl, expsUrl, appName) to prevent XSS. Added security headers: X-Content-Type-Options, X-Frame-Options, Referrer-Policy. Replaced external unpkg.com QR script with local copy (qr-code-styling@1.6.0) served with SRI integrity hash (sha384). Enhanced path traversal protection with resolved path validation. All 12 security tests pass (HTML encoding, origin validation, malformed headers, trusted/untrusted origins). Mobile typecheck passes. Static build requires deployment domain env var (expected for production). Documented security architecture and deployment prerequisites in replit.md.
+- 2026-07-20 | T-010 | `pnpm run typecheck` (passed), `pnpm --filter @workspace/mobile test -- --runInBand` (17/17 passed), `pnpm --filter @workspace/api-server test -- --runInBand` (10/10 passed), `pnpm --filter @workspace/mobile exec node --test server/serve.test.js` (12/12 passed), `pnpm --filter @workspace/api-spec run codegen` (Orval 8.21.0, generated code matched tracked files) | DONE | Verified README.md, replit.md, and TODO.md updated with baseline facts. Next: T-011.
+- No tasks in this backlog have been completed yet.

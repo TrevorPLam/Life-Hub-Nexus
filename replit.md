@@ -1,20 +1,23 @@
-# [Project name]
+# Life Hub Nexus
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A local-first, modular life-operations mobile app and API monolith. Currently at an architecture baseline: the mobile app persists profile data locally, and the API server exposes health and mock profile routes.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — build and run the API server (requires `PORT` env)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
+- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec (verified; Orval v8.21.0)
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
 - `pnpm --filter @workspace/mobile test -- --runInBand` — run mobile pure-domain tests
 - `pnpm --filter @workspace/api-server test -- --runInBand` — run API server route tests
-- `pnpm --filter @workspace/mobile exec node --test server/serve.test.js` — run mobile preview server security tests
+- `pnpm --filter @workspace/mobile exec node --test server/serve.test.js` — run mobile preview server security tests (verified; 12/12 pass)
 - `pnpm --filter @workspace/mobile run serve` — run mobile preview server (requires static-build/)
 - Required env: `DATABASE_URL` — Postgres connection string
+- API server env: `PORT` — HTTP port
 - Mobile preview server env: `TRUSTED_ORIGINS` — comma-separated allowlist of trusted domains (optional, enables origin validation)
+- Mobile preview server env: `BASE_PATH` — optional base path for static assets (default `/`)
+- Mobile build env: `REPLIT_INTERNAL_APP_DOMAIN`, `REPLIT_DEV_DOMAIN`, or `EXPO_PUBLIC_DOMAIN`
 
 ## Platform Support
 
@@ -68,7 +71,7 @@ _Replace the heading above with the project's name, and this line with one sente
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Life Hub Nexus is intended to become a secure, local-first life-operations app for managing profile, tasks, calendar events, notes, people, budgets, and social references, with server sync driven by authenticated identity.
 
 ## User preferences
 
@@ -77,6 +80,10 @@ _Populate as you build — explicit user instructions worth remembering across s
 ## Gotchas
 
 - **Mobile static build requires deployment domain:** `pnpm --filter @workspace/mobile run build` requires `REPLIT_INTERNAL_APP_DOMAIN`, `REPLIT_DEV_DOMAIN`, or `EXPO_PUBLIC_DOMAIN` environment variable to be set. This is expected for production builds on Replit or similar platforms.
+- **API routes are mock-only:** Profile endpoints in `artifacts/api-server/src/routes/` return deterministic in-memory data. They are not backed by `lib/db` yet.
+- **No `.env.example` yet:** Environment variable names are documented in `README.md`.
+- **Formatting/linting scripts missing:** `pnpm run format:check` and `pnpm run lint` do not exist at the root yet.
+- **Codegen is source-owned:** `lib/api-client-react/src/generated/` and `lib/api-zod/src/generated/` are produced by `pnpm --filter @workspace/api-spec run codegen`. Do not edit them by hand.
 
 ## Pointers
 
