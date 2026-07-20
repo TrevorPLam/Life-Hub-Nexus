@@ -6,12 +6,16 @@ import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
 import { useCalendar } from '@/context/CalendarContext';
 import { EventItem } from '@/components/calendar/EventItem';
+import { TimeGrid } from '@/components/calendar/TimeGrid';
 import { EmptyState } from '@/components/ui/EmptyState';
 
-type CalView = 'month' | 'week' | '3day';
+type CalView = 'month' | 'week' | 'day';
 
 const DAYS_SHORT = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
 
 export default function CalendarScreen() {
   const colors = useColors();
@@ -28,62 +32,100 @@ export default function CalendarScreen() {
 
   const selectedEvents = getEventsForDate(selectedDate);
 
-  const hasEvents = (date: Date) => {
-    const dateStr = date.toDateString();
-    return events.some(e => new Date(e.startDate).toDateString() === dateStr);
-  };
+  const hasEvents = (date: Date) =>
+    events.some(e => {
+      // Quick dot check — check the raw start date only for performance
+      return new Date(e.startDate).toDateString() === date.toDateString();
+    });
 
   const isToday = (d: number) => {
     const now = new Date();
-    return d === now.getDate() && currentMonth.getMonth() === now.getMonth() && currentMonth.getFullYear() === now.getFullYear();
+    return (
+      d === now.getDate() &&
+      currentMonth.getMonth() === now.getMonth() &&
+      currentMonth.getFullYear() === now.getFullYear()
+    );
   };
 
-  const isSelected = (d: number) => {
-    return d === selectedDate.getDate() && currentMonth.getMonth() === selectedDate.getMonth() && currentMonth.getFullYear() === selectedDate.getFullYear();
-  };
+  const isSelected = (d: number) =>
+    d === selectedDate.getDate() &&
+    currentMonth.getMonth() === selectedDate.getMonth() &&
+    currentMonth.getFullYear() === selectedDate.getFullYear();
 
-  const prevMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
-  const nextMonth = () => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+  const prevMonth = () =>
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
+  const nextMonth = () =>
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
+
+  const prevDay = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - 1);
+    setSelectedDate(d);
+    setCurrentMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+  };
+  const nextDay = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + 1);
+    setSelectedDate(d);
+    setCurrentMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+  };
 
   const getWeekDates = () => {
     const start = new Date(selectedDate);
     start.setDate(selectedDate.getDate() - selectedDate.getDay());
-    return Array.from({ length: 7 }, (_, i) => { const d = new Date(start); d.setDate(start.getDate() + i); return d; });
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      return d;
+    });
   };
 
-  const get3Days = () => {
-    return Array.from({ length: 3 }, (_, i) => { const d = new Date(selectedDate); d.setDate(selectedDate.getDate() + i); return d; });
+  const handleNewEventAtSlot = (time: Date) => {
+    router.push(`/calendar/new`);
   };
 
-  const viewDates = view === 'week' ? getWeekDates() : view === '3day' ? get3Days() : null;
+  const useTimeGrid = view === 'week' || view === 'day';
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       {/* Header */}
-      <View style={[styles.header, { paddingTop: topPad + 16, backgroundColor: colors.background, borderBottomColor: colors.border }]}>
+      <View
+        style={[
+          styles.header,
+          { paddingTop: topPad + 16, backgroundColor: colors.background, borderBottomColor: colors.border },
+        ]}
+      >
         <View style={styles.headerRow}>
-          <View>
+          <TouchableOpacity onPress={() => setSelectedDate(new Date())} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Text style={[styles.headerTitle, { color: colors.foreground }]}>Calendar</Text>
-          </View>
+          </TouchableOpacity>
           <View style={styles.headerActions}>
             <View style={[styles.viewToggle, { backgroundColor: colors.muted, borderRadius: colors.radius }]}>
-              {(['month', 'week', '3day'] as CalView[]).map(v => (
-                <TouchableOpacity key={v} onPress={() => setView(v)}
-                  style={[styles.viewBtn, view === v && { backgroundColor: colors.calendar, borderRadius: colors.radius - 2 }]}>
+              {(['month', 'week', 'day'] as CalView[]).map(v => (
+                <TouchableOpacity
+                  key={v}
+                  onPress={() => setView(v)}
+                  style={[
+                    styles.viewBtn,
+                    view === v && { backgroundColor: colors.calendar, borderRadius: colors.radius - 2 },
+                  ]}
+                >
                   <Text style={[styles.viewBtnText, { color: view === v ? '#fff' : colors.mutedForeground }]}>
-                    {v === '3day' ? '3D' : v === 'month' ? 'M' : 'W'}
+                    {v === 'month' ? 'M' : v === 'week' ? 'W' : 'D'}
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
-            <TouchableOpacity onPress={() => router.push('/calendar/new')} style={[styles.addBtn, { backgroundColor: colors.calendar }]}>
+            <TouchableOpacity
+              onPress={() => router.push('/calendar/new')}
+              style={[styles.addBtn, { backgroundColor: colors.calendar }]}
+            >
               <Feather name="plus" size={20} color="#fff" />
             </TouchableOpacity>
-
           </View>
         </View>
 
-        {/* Month nav */}
+        {/* Month view: full calendar grid */}
         {view === 'month' && (
           <>
             <View style={styles.monthNav}>
@@ -98,28 +140,50 @@ export default function CalendarScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Day headers */}
             <View style={styles.dayHeaders}>
               {DAYS_SHORT.map(d => (
                 <Text key={d} style={[styles.dayHeader, { color: colors.mutedForeground }]}>{d}</Text>
               ))}
             </View>
 
-            {/* Calendar grid */}
             <View style={styles.grid}>
-              {Array.from({ length: firstDayOfMonth }, (_, i) => <View key={`empty-${i}`} style={styles.dayCell} />)}
+              {Array.from({ length: firstDayOfMonth }, (_, i) => (
+                <View key={`empty-${i}`} style={styles.dayCell} />
+              ))}
               {Array.from({ length: daysInMonth }, (_, i) => {
                 const day = i + 1;
                 const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-                const today_ = isToday(day);
+                const todayCell = isToday(day);
                 const sel = isSelected(day);
                 const hasDot = hasEvents(date);
                 return (
-                  <TouchableOpacity key={day} style={styles.dayCell} onPress={() => setSelectedDate(date)}>
-                    <View style={[styles.dayInner, today_ && { backgroundColor: `${colors.calendar}20` }, sel && { backgroundColor: colors.calendar }]}>
-                      <Text style={[styles.dayNum, { color: sel ? '#fff' : today_ ? colors.calendar : colors.foreground }]}>{day}</Text>
+                  <TouchableOpacity
+                    key={day}
+                    style={styles.dayCell}
+                    onPress={() => {
+                      setSelectedDate(date);
+                      setView('day');
+                    }}
+                  >
+                    <View
+                      style={[
+                        styles.dayInner,
+                        todayCell && { backgroundColor: `${colors.calendar}20` },
+                        sel && { backgroundColor: colors.calendar },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          styles.dayNum,
+                          { color: sel ? '#fff' : todayCell ? colors.calendar : colors.foreground },
+                        ]}
+                      >
+                        {day}
+                      </Text>
                     </View>
-                    {hasDot && !sel && <View style={[styles.eventDot, { backgroundColor: colors.calendar }]} />}
+                    {hasDot && !sel && (
+                      <View style={[styles.eventDot, { backgroundColor: colors.calendar }]} />
+                    )}
                   </TouchableOpacity>
                 );
               })}
@@ -127,41 +191,115 @@ export default function CalendarScreen() {
           </>
         )}
 
-        {/* Week/3day strip */}
-        {viewDates && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dayStrip} contentContainerStyle={styles.dayStripContent}>
-            {viewDates.map((d, i) => {
+        {/* Week strip */}
+        {view === 'week' && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.dayStrip}
+            contentContainerStyle={styles.dayStripContent}
+          >
+            {getWeekDates().map((d, i) => {
               const sel = d.toDateString() === selectedDate.toDateString();
-              const today_ = d.toDateString() === new Date().toDateString();
+              const todayD = d.toDateString() === new Date().toDateString();
               return (
                 <TouchableOpacity key={i} onPress={() => setSelectedDate(d)} style={styles.stripDay}>
-                  <Text style={[styles.stripDayName, { color: colors.mutedForeground }]}>{DAYS_SHORT[d.getDay()]}</Text>
-                  <View style={[styles.stripDayNum, sel && { backgroundColor: colors.calendar }, today_ && !sel && { borderWidth: 1, borderColor: colors.calendar }]}>
-                    <Text style={[styles.stripDayNumText, { color: sel ? '#fff' : today_ ? colors.calendar : colors.foreground }]}>{d.getDate()}</Text>
+                  <Text style={[styles.stripDayName, { color: colors.mutedForeground }]}>
+                    {DAYS_SHORT[d.getDay()]}
+                  </Text>
+                  <View
+                    style={[
+                      styles.stripDayNum,
+                      sel && { backgroundColor: colors.calendar },
+                      todayD && !sel && { borderWidth: 1, borderColor: colors.calendar },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.stripDayNumText,
+                        { color: sel ? '#fff' : todayD ? colors.calendar : colors.foreground },
+                      ]}
+                    >
+                      {d.getDate()}
+                    </Text>
                   </View>
-                  {hasEvents(d) && !sel && <View style={[styles.eventDot, { backgroundColor: colors.calendar }]} />}
+                  {hasEvents(d) && !sel && (
+                    <View style={[styles.eventDot, { backgroundColor: colors.calendar }]} />
+                  )}
                 </TouchableOpacity>
               );
             })}
           </ScrollView>
         )}
-      </View>
 
-      {/* Selected date events */}
-      <View style={styles.selectedDateRow}>
-        <Text style={[styles.selectedDateLabel, { color: colors.foreground }]}>
-          {selectedDate.toDateString() === new Date().toDateString() ? 'Today' : selectedDate.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}
-        </Text>
-        <Text style={[styles.eventCount, { color: colors.mutedForeground }]}>{selectedEvents.length} events</Text>
-      </View>
-
-      <ScrollView style={styles.events} contentContainerStyle={[styles.eventsContent, { paddingBottom: Platform.OS === 'web' ? 100 : 120 }]}>
-        {selectedEvents.length === 0 ? (
-          <EmptyState icon="calendar" title="No events" subtitle="Add something to your schedule" accentColor={colors.calendar} />
-        ) : (
-          selectedEvents.map(e => <EventItem key={e.id} event={e} onPress={() => router.push(`/calendar/${e.id}`)} />)
+        {/* Day navigation bar */}
+        {view === 'day' && (
+          <View style={styles.dayNav}>
+            <TouchableOpacity onPress={prevDay} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Feather name="chevron-left" size={20} color={colors.foreground} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setSelectedDate(new Date())} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Text style={[styles.dayNavLabel, { color: colors.foreground }]}>
+                {selectedDate.toDateString() === new Date().toDateString()
+                  ? 'Today'
+                  : selectedDate.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}
+              </Text>
+              <Text style={[styles.dayNavSub, { color: colors.mutedForeground }]}>
+                {selectedDate.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={nextDay} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Feather name="chevron-right" size={20} color={colors.foreground} />
+            </TouchableOpacity>
+          </View>
         )}
-      </ScrollView>
+      </View>
+
+      {/* Content */}
+      {useTimeGrid ? (
+        <TimeGrid
+          events={selectedEvents}
+          date={selectedDate}
+          calendarColor={colors.calendar}
+          onEventPress={id => router.push(`/calendar/${id}`)}
+          onSlotPress={handleNewEventAtSlot}
+        />
+      ) : (
+        <>
+          {/* Selected date header for month view */}
+          <View style={styles.selectedDateRow}>
+            <Text style={[styles.selectedDateLabel, { color: colors.foreground }]}>
+              {selectedDate.toDateString() === new Date().toDateString()
+                ? 'Today'
+                : selectedDate.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}
+            </Text>
+            <Text style={[styles.eventCount, { color: colors.mutedForeground }]}>
+              {selectedEvents.length} {selectedEvents.length === 1 ? 'event' : 'events'}
+            </Text>
+          </View>
+
+          <ScrollView
+            style={styles.events}
+            contentContainerStyle={[
+              styles.eventsContent,
+              { paddingBottom: Platform.OS === 'web' ? 100 : 120 },
+            ]}
+          >
+            {selectedEvents.length === 0 ? (
+              <EmptyState
+                icon="calendar"
+                title="No events"
+                subtitle="Tap a day to view or tap + to add"
+                accentColor={colors.calendar}
+              />
+            ) : (
+              selectedEvents.map(e => (
+                <EventItem key={e.id} event={e} onPress={() => router.push(`/calendar/${e.id}`)} />
+              ))
+            )}
+          </ScrollView>
+        </>
+      )}
     </View>
   );
 }
@@ -169,14 +307,24 @@ export default function CalendarScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { paddingHorizontal: 16, paddingBottom: 8, borderBottomWidth: StyleSheet.hairlineWidth },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
   headerTitle: { fontSize: 28, fontFamily: 'Inter_700Bold', letterSpacing: -0.5 },
   headerActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   viewToggle: { flexDirection: 'row', padding: 3, gap: 2 },
   viewBtn: { paddingHorizontal: 10, paddingVertical: 4 },
   viewBtnText: { fontSize: 12, fontFamily: 'Inter_600SemiBold' },
   addBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  monthNav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  monthNav: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
   monthLabel: { fontSize: 16, fontFamily: 'Inter_600SemiBold' },
   dayHeaders: { flexDirection: 'row', marginBottom: 4 },
   dayHeader: { flex: 1, textAlign: 'center', fontSize: 11, fontFamily: 'Inter_500Medium' },
@@ -191,7 +339,22 @@ const styles = StyleSheet.create({
   stripDayName: { fontSize: 11, fontFamily: 'Inter_500Medium', marginBottom: 4 },
   stripDayNum: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   stripDayNumText: { fontSize: 15, fontFamily: 'Inter_600SemiBold' },
-  selectedDateRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12 },
+  dayNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 4,
+    paddingBottom: 4,
+  },
+  dayNavLabel: { fontSize: 15, fontFamily: 'Inter_600SemiBold', textAlign: 'center' },
+  dayNavSub: { fontSize: 12, fontFamily: 'Inter_400Regular', textAlign: 'center', marginTop: 2 },
+  selectedDateRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
   selectedDateLabel: { fontSize: 15, fontFamily: 'Inter_600SemiBold' },
   eventCount: { fontSize: 13, fontFamily: 'Inter_400Regular' },
   events: { flex: 1 },

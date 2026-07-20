@@ -118,9 +118,10 @@ interface DatePickerModalProps {
   value: string; // ISO date "YYYY-MM-DD" or empty
   onConfirm: (iso: string) => void;
   onDismiss: () => void;
+  title?: string;
 }
 
-export function DatePickerModal({ visible, value, onConfirm, onDismiss }: DatePickerModalProps) {
+export function DatePickerModal({ visible, value, onConfirm, onDismiss, title = 'Select Date' }: DatePickerModalProps) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
 
@@ -188,7 +189,7 @@ export function DatePickerModal({ visible, value, onConfirm, onDismiss }: DatePi
           <TouchableOpacity onPress={onDismiss} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
             <Text style={[styles.cancelBtn, { color: colors.mutedForeground }]}>Cancel</Text>
           </TouchableOpacity>
-          <Text style={[styles.title, { color: colors.foreground }]}>Select Birthday</Text>
+          <Text style={[styles.title, { color: colors.foreground }]}>{title}</Text>
           <TouchableOpacity onPress={handleConfirm} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
             <Text style={[styles.doneBtn, { color: colors.primary }]}>Done</Text>
           </TouchableOpacity>
