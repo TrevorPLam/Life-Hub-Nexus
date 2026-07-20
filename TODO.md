@@ -104,7 +104,7 @@ pnpm run typecheck
 
 ---
 
-## [ ] T-012 | STATUS: TODO | Create shared domain primitives without feature migration
+## [x] T-012 | STATUS: DONE | Create shared domain primitives without feature migration
 
 **Purpose:** Add the smallest shared foundation needed for future feature modules without prematurely moving existing entities.
 
@@ -136,10 +136,10 @@ pnpm run typecheck
 
 ### Subtasks
 
-- [ ] T-012.01 | AGENT | Target: `package.json`, `pnpm-workspace.yaml`, `tsconfig.json`, `lib/` | Research existing workspace package conventions, build/typecheck behavior, runtime module resolution, and test configuration. Confirm a new package can be referenced without changing generated API code.
-- [ ] T-012.02 | AGENT | Target: `lib/domain-core/__tests__/` | Write failing Given/When/Then tests for deterministic ID generation, branded ID construction, successful and failed result values, and a fixed clock. Keep tests independent of React Native and Node globals.
-- [ ] T-012.03 | AGENT | Target: `lib/domain-core/src/`, `lib/domain-core/package.json`, `lib/domain-core/tsconfig.json` | Create the package and implement the smallest public API that passes the focused tests. Add explicit build, typecheck, and test scripts consistent with workspace conventions.
-- [ ] T-012.04 | AGENT | Target: `tsconfig.json`, `replit.md`, `TODO.md` | Add only required project references and document the public package boundary. Run targeted tests and typechecks; record results before marking T-012 complete.
+- [x] T-012.01 | AGENT | Target: `package.json`, `pnpm-workspace.yaml`, `tsconfig.json`, `lib/` | Research existing workspace package conventions, build/typecheck behavior, runtime module resolution, and test configuration. Confirmed a new package can be referenced without changing generated API code.
+- [x] T-012.02 | AGENT | Target: `lib/domain-core/__tests__/` | Wrote Given/When/Then tests for deterministic ID generation, branded ID construction, successful and failed result values, and a fixed clock. Tests are independent of React Native and Node globals.
+- [x] T-012.03 | AGENT | Target: `lib/domain-core/src/`, `lib/domain-core/package.json`, `lib/domain-core/tsconfig.json` | Created the package and implemented the smallest public API that passes the focused tests. Added build, typecheck, and test scripts consistent with workspace conventions.
+- [x] T-012.04 | AGENT | Target: `tsconfig.json`, `replit.md`, `TODO.md` | Added the required project reference and documented the public package boundary. Ran targeted tests and typechecks; recorded results below.
 
 ---
 
@@ -461,3 +461,4 @@ YYYY-MM-DD | TASK-ID | commands run | result | follow-up or none
 
 - 2026-07-20 | T-010 | `pnpm run typecheck` (passed), `pnpm --filter @workspace/mobile test -- --runInBand` (17/17 passed), `pnpm --filter @workspace/api-server test -- --runInBand` (10/10 passed), `pnpm --filter @workspace/mobile exec node --test server/serve.test.js` (12/12 passed), `pnpm --filter @workspace/api-spec run codegen` (Orval 8.21.0, generated code matched tracked files) | DONE | Verified README.md, replit.md, and TODO.md updated with baseline facts. Next: T-011.
 - 2026-07-20 | T-011 | `pnpm run typecheck` (passed) | DONE | Created `docs/architecture/context-map.md` with all 12 bounded contexts, dependency rules, provider policy, and migration debt table. Updated `replit.md` with context map pointer and module dependency rules. No production imports/exports changed.
+- 2026-07-20 | T-012 | `pnpm --filter @workspace/domain-core test -- --runInBand` (8/8 passed), `pnpm --filter @workspace/domain-core run typecheck` (passed), `pnpm run typecheck` (passed), `pnpm --filter @workspace/domain-core run build` (passed) | DONE | Created `@workspace/domain-core` with `EntityId` branding helpers, `Result<T,E>`, `Clock`/`IdGenerator` ports, and deterministic test adapters. Added project reference in root `tsconfig.json` and documented the package boundary in `replit.md`. No existing feature migrated.

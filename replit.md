@@ -48,6 +48,7 @@ A local-first, modular life-operations mobile app and API monolith. Currently at
 - **Profile persistence:** `artifacts/mobile/domain/profile/ProfileRepository.ts` - deep module with anti-corruption layer for AsyncStorage
 - **Profile context:** `artifacts/mobile/context/AppContext.tsx` - consumes repository, exposes load/save failure state
 - **Profile tests:** `artifacts/mobile/__tests__/profile-repository.test.ts` - Given/When/Then tests for repository behavior
+- **Shared domain primitives:** `lib/domain-core/src/index.ts` - runtime-neutral `EntityId` branding helpers, `Result<T,E>`, `Clock` and `IdGenerator` ports, plus deterministic test adapters (`createFixedClock`, `createSequenceIdGenerator`)
 
 ## Architecture decisions
 
