@@ -1,5 +1,5 @@
 import React from 'react';
-import { Platform, StyleSheet, useColorScheme, View } from 'react-native';
+import { Platform, StyleSheet, View } from 'react-native';
 import { useColors } from '@/hooks/useColors';
 import { Feather } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -37,35 +37,47 @@ function NativeTabLayout() {
 
 function ClassicTabLayout() {
   const colors = useColors();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
   const isIOS = Platform.OS === 'ios';
   const isWeb = Platform.OS === 'web';
+
+  // Tab bar is always black — the app uses a forced dark / black palette.
+  const TAB_BG = '#000000';
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.mutedForeground,
+        tabBarActiveTintColor:   colors.primary,   // electric blue
+        tabBarInactiveTintColor: '#444444',
         headerShown: false,
         tabBarStyle: {
           position: 'absolute',
-          backgroundColor: isIOS ? 'transparent' : colors.background,
-          borderTopWidth: isWeb ? StyleSheet.hairlineWidth : 0,
+          // Transparent on iOS so the BlurView shows; solid black elsewhere.
+          backgroundColor: isIOS ? 'transparent' : TAB_BG,
+          borderTopWidth: StyleSheet.hairlineWidth,
           borderTopColor: colors.border,
           elevation: 0,
           height: isWeb ? 84 : 80,
         },
         tabBarBackground: () =>
           isIOS ? (
+            // Always dark blur — matches the black theme.
             <BlurView
-              intensity={100}
-              tint={isDark ? 'dark' : 'light'}
+              intensity={90}
+              tint="dark"
               style={StyleSheet.absoluteFill}
             />
-          ) : isWeb ? (
-            <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.background, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }]} />
-          ) : null,
+          ) : (
+            <View
+              style={[
+                StyleSheet.absoluteFill,
+                {
+                  backgroundColor: TAB_BG,
+                  borderTopWidth: StyleSheet.hairlineWidth,
+                  borderTopColor: colors.border,
+                },
+              ]}
+            />
+          ),
         tabBarLabelStyle: {
           fontFamily: 'Inter_500Medium',
           fontSize: 10,

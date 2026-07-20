@@ -1,54 +1,52 @@
+// ─── Module accent colours ─────────────────────────────────────────────────
+// Vivid / neon variants chosen to pop on a pure-black background.
 const moduleColors = {
-  work: '#3B82F6',
-  calendar: '#F97316',
-  notes: '#10B981',
-  budget: '#14B8A6',
-  people: '#8B5CF6',
-  social: '#F43F5E',
+  work:     '#2979FF', // electric blue (same family as primary)
+  calendar: '#FF6B00', // neon orange
+  notes:    '#00D48C', // neon green
+  budget:   '#00BFFF', // electric cyan
+  people:   '#A855F7', // vivid violet
+  social:   '#FF2D55', // neon pink-red
 };
 
+// ─── Shared base tokens (colour-scheme independent) ────────────────────────
+const base = {
+  text:                 '#FFFFFF',
+  tint:                 '#0057FF',
+  foreground:           '#FFFFFF',
+  cardForeground:       '#FFFFFF',
+  primary:              '#0057FF', // electric blue
+  primaryForeground:    '#FFFFFF',
+  secondaryForeground:  '#AAAAAA',
+  muted:                '#111111',
+  mutedForeground:      '#555555',
+  accent:               '#0057FF',
+  accentForeground:     '#FFFFFF',
+  destructive:          '#FF3B30',
+  destructiveForeground:'#FFFFFF',
+  ...moduleColors,
+};
+
+// ─── Palettes ───────────────────────────────────────────────────────────────
+// Both are dark so the black + electric-blue look is consistent regardless
+// of the device's system appearance setting. The "light" variant is a hair
+// lighter than "dark" so the OS switch doesn't feel broken.
 const colors = {
   light: {
-    text: '#0A0A14',
-    tint: '#6366F1',
-    background: '#F5F5F8',
-    foreground: '#0A0A14',
-    card: '#FFFFFF',
-    cardForeground: '#0A0A14',
-    primary: '#6366F1',
-    primaryForeground: '#FFFFFF',
-    secondary: '#EEEEF4',
-    secondaryForeground: '#1A1A28',
-    muted: '#EBEBF5',
-    mutedForeground: '#7070A0',
-    accent: '#6366F1',
-    accentForeground: '#FFFFFF',
-    destructive: '#EF4444',
-    destructiveForeground: '#FFFFFF',
-    border: '#E2E2EC',
-    input: '#EBEBF5',
-    ...moduleColors,
+    ...base,
+    background: '#0A0A0A',
+    card:        '#111111',
+    secondary:   '#111111',
+    border:      '#1E1E1E',
+    input:       '#111111',
   },
   dark: {
-    text: '#F0F0F8',
-    tint: '#818CF8',
-    background: '#0D0D14',
-    foreground: '#F0F0F8',
-    card: '#16162A',
-    cardForeground: '#F0F0F8',
-    primary: '#6366F1',
-    primaryForeground: '#FFFFFF',
-    secondary: '#1C1C2E',
-    secondaryForeground: '#A0A0C0',
-    muted: '#16162A',
-    mutedForeground: '#5A5A8A',
-    accent: '#818CF8',
-    accentForeground: '#FFFFFF',
-    destructive: '#EF4444',
-    destructiveForeground: '#FFFFFF',
-    border: '#252540',
-    input: '#1C1C2E',
-    ...moduleColors,
+    ...base,
+    background: '#000000',
+    card:        '#0D0D0D',
+    secondary:   '#0D0D0D',
+    border:      '#1A1A1A',
+    input:       '#0D0D0D',
   },
   radius: 12,
 };
