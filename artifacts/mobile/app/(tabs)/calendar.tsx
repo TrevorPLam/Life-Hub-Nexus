@@ -1,10 +1,18 @@
-import React, { useState } from 'react';
-import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useMemo, useRef, useState } from 'react';
+import {
+  PanResponder,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useColors } from '@/hooks/useColors';
-import { useCalendar } from '@/context/CalendarContext';
+import { useCalendar, CalendarEvent } from '@/context/CalendarContext';
 import { EventItem } from '@/components/calendar/EventItem';
 import { TimeGrid } from '@/components/calendar/TimeGrid';
 import { EmptyState } from '@/components/ui/EmptyState';
@@ -16,6 +24,38 @@ const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
+
+const MAX_DOTS = 3;
+
+function EventDots({ events }: { events: CalendarEvent[] }) {
+  if (events.length === 0) return null;
+  const dots = events.slice(0, MAX_DOTS);
+  const overflow = events.length - MAX_DOTS;
+  return (
+    <View style={dotStyles.row}>
+      {dots.map((e, i) => (
+        <View
+          key={e.id}
+          style={[
+            dotStyles.dot,
+            { backgroundColor: e.color },
+            // fade the last dot when there's overflow
+            i === MAX_DOTS - 1 && overflow > 0 && { opacity: 0.5 },
+          ]}
+        />
+      ))}
+      {overflow > 0 && (
+        <Text style={dotStyles.overflow}>+{overflow}</Text>
+      )}
+    </View>
+  );
+}
+
+const dotStyles = StyleSheet.create({
+  row: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2, justifyContent: 'center' },
+  dot: { width: 4, height: 4, borderRadius: 2 },
+  overflow: { fontSize: 7, fontFamily: 'Inter_600SemiBold', color: '#666', marginLeft: 1 },
+});
 
 export default function CalendarScreen() {
   const colors = useColors();
@@ -30,13 +70,105 @@ export default function CalendarScreen() {
   const daysInMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1).getDay();
 
-  const selectedEvents = getEventsForDate(selectedDate);
+  // Pre-compute events for every day in the visible month (honors recurrence)
+  const monthEventMap = useMemo(() => {
+    const map = new Map<string, CalendarEvent[]>();
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), d);
+      map.set(date.toDateString(), getEventsForDate(date));
+    }
+    return map;
+  }, [currentMonth, events, daysInMonth]);
 
-  const hasEvents = (date: Date) =>
-    events.some(e => {
-      // Quick dot check — check the raw start date only for performance
-      return new Date(e.startDate).toDateString() === date.toDateString();
+  const selectedEvents = useMemo(() => getEventsForDate(selectedDate), [selectedDate, events]);
+
+  // ── Navigation helpers ────────────────────────────────────────────────────
+
+  const prevMonth = () => setCurrentMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1));
+  const nextMonth = () => setCurrentMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1));
+
+  const prevWeek = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - 7);
+    setSelectedDate(d);
+    setCurrentMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+  };
+  const nextWeek = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + 7);
+    setSelectedDate(d);
+    setCurrentMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+  };
+
+  const prevDay = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() - 1);
+    setSelectedDate(d);
+    setCurrentMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+  };
+  const nextDay = () => {
+    const d = new Date(selectedDate);
+    d.setDate(d.getDate() + 1);
+    setSelectedDate(d);
+    setCurrentMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+  };
+
+  const goToToday = () => {
+    const today = new Date();
+    setSelectedDate(today);
+    setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+  };
+
+  const isViewingToday = selectedDate.toDateString() === new Date().toDateString();
+
+  // ── Swipe gesture ─────────────────────────────────────────────────────────
+
+  const swipePan = useRef(
+    PanResponder.create({
+      // Only capture if horizontal movement dominates
+      onMoveShouldSetPanResponder: (_, gs) =>
+        Math.abs(gs.dx) > Math.abs(gs.dy) * 1.5 && Math.abs(gs.dx) > 12,
+      onPanResponderTerminationRequest: () => true,
+      onPanResponderRelease: (_, gs) => {
+        const THRESHOLD = 60;
+        if (gs.dx > THRESHOLD) {
+          // Swipe right → go back
+          if (viewRef.current === 'month') prevMonthRef.current();
+          else if (viewRef.current === 'week') prevWeekRef.current();
+          else prevDayRef.current();
+        } else if (gs.dx < -THRESHOLD) {
+          // Swipe left → go forward
+          if (viewRef.current === 'month') nextMonthRef.current();
+          else if (viewRef.current === 'week') nextWeekRef.current();
+          else nextDayRef.current();
+        }
+      },
+    }),
+  ).current;
+
+  // Use refs to avoid stale closure in PanResponder
+  const viewRef = useRef(view);
+  viewRef.current = view;
+  const prevMonthRef = useRef(prevMonth); prevMonthRef.current = prevMonth;
+  const nextMonthRef = useRef(nextMonth); nextMonthRef.current = nextMonth;
+  const prevWeekRef = useRef(prevWeek); prevWeekRef.current = prevWeek;
+  const nextWeekRef = useRef(nextWeek); nextWeekRef.current = nextWeek;
+  const prevDayRef = useRef(prevDay); prevDayRef.current = prevDay;
+  const nextDayRef = useRef(nextDay); nextDayRef.current = nextDay;
+
+  // ── Week dates ────────────────────────────────────────────────────────────
+
+  const weekDates = useMemo(() => {
+    const start = new Date(selectedDate);
+    start.setDate(selectedDate.getDate() - selectedDate.getDay());
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      return d;
     });
+  }, [selectedDate]);
+
+  const useTimeGrid = view === 'week' || view === 'day';
 
   const isToday = (d: number) => {
     const now = new Date();
@@ -52,54 +184,34 @@ export default function CalendarScreen() {
     currentMonth.getMonth() === selectedDate.getMonth() &&
     currentMonth.getFullYear() === selectedDate.getFullYear();
 
-  const prevMonth = () =>
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1));
-  const nextMonth = () =>
-    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
-
-  const prevDay = () => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() - 1);
-    setSelectedDate(d);
-    setCurrentMonth(new Date(d.getFullYear(), d.getMonth(), 1));
-  };
-  const nextDay = () => {
-    const d = new Date(selectedDate);
-    d.setDate(d.getDate() + 1);
-    setSelectedDate(d);
-    setCurrentMonth(new Date(d.getFullYear(), d.getMonth(), 1));
-  };
-
-  const getWeekDates = () => {
-    const start = new Date(selectedDate);
-    start.setDate(selectedDate.getDate() - selectedDate.getDay());
-    return Array.from({ length: 7 }, (_, i) => {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      return d;
-    });
-  };
-
-  const handleNewEventAtSlot = (time: Date) => {
-    router.push(`/calendar/new`);
-  };
-
-  const useTimeGrid = view === 'week' || view === 'day';
-
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      {/* Header */}
+      {/* ── Header ─────────────────────────────────────────────────────── */}
       <View
+        {...swipePan.panHandlers}
         style={[
           styles.header,
           { paddingTop: topPad + 16, backgroundColor: colors.background, borderBottomColor: colors.border },
         ]}
       >
+        {/* Title row */}
         <View style={styles.headerRow}>
-          <TouchableOpacity onPress={() => setSelectedDate(new Date())} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+          <TouchableOpacity onPress={goToToday} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Text style={[styles.headerTitle, { color: colors.foreground }]}>Calendar</Text>
           </TouchableOpacity>
+
           <View style={styles.headerActions}>
+            {/* Today pill — visible when not on today in week/day views */}
+            {!isViewingToday && view !== 'month' && (
+              <TouchableOpacity
+                onPress={goToToday}
+                style={[styles.todayPill, { borderColor: colors.calendar }]}
+              >
+                <Text style={[styles.todayPillText, { color: colors.calendar }]}>Today</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* View toggle */}
             <View style={[styles.viewToggle, { backgroundColor: colors.muted, borderRadius: colors.radius }]}>
               {(['month', 'week', 'day'] as CalView[]).map(v => (
                 <TouchableOpacity
@@ -116,6 +228,7 @@ export default function CalendarScreen() {
                 </TouchableOpacity>
               ))}
             </View>
+
             <TouchableOpacity
               onPress={() => router.push('/calendar/new')}
               style={[styles.addBtn, { backgroundColor: colors.calendar }]}
@@ -125,17 +238,19 @@ export default function CalendarScreen() {
           </View>
         </View>
 
-        {/* Month view: full calendar grid */}
+        {/* ── Month grid ──────────────────────────────────────────────── */}
         {view === 'month' && (
           <>
             <View style={styles.monthNav}>
-              <TouchableOpacity onPress={prevMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <TouchableOpacity onPress={prevMonth} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
                 <Feather name="chevron-left" size={20} color={colors.foreground} />
               </TouchableOpacity>
-              <Text style={[styles.monthLabel, { color: colors.foreground }]}>
-                {MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}
-              </Text>
-              <TouchableOpacity onPress={nextMonth} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <TouchableOpacity onPress={goToToday}>
+                <Text style={[styles.monthLabel, { color: colors.foreground }]}>
+                  {MONTHS[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={nextMonth} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
                 <Feather name="chevron-right" size={20} color={colors.foreground} />
               </TouchableOpacity>
             </View>
@@ -155,7 +270,8 @@ export default function CalendarScreen() {
                 const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
                 const todayCell = isToday(day);
                 const sel = isSelected(day);
-                const hasDot = hasEvents(date);
+                const cellEvents = monthEventMap.get(date.toDateString()) ?? [];
+
                 return (
                   <TouchableOpacity
                     key={day}
@@ -164,11 +280,12 @@ export default function CalendarScreen() {
                       setSelectedDate(date);
                       setView('day');
                     }}
+                    activeOpacity={0.7}
                   >
                     <View
                       style={[
                         styles.dayInner,
-                        todayCell && { backgroundColor: `${colors.calendar}20` },
+                        todayCell && { backgroundColor: `${colors.calendar}25` },
                         sel && { backgroundColor: colors.calendar },
                       ]}
                     >
@@ -181,8 +298,11 @@ export default function CalendarScreen() {
                         {day}
                       </Text>
                     </View>
-                    {hasDot && !sel && (
-                      <View style={[styles.eventDot, { backgroundColor: colors.calendar }]} />
+                    {!sel && <EventDots events={cellEvents} />}
+                    {sel && cellEvents.length > 0 && (
+                      <View style={dotStyles.row}>
+                        <View style={[dotStyles.dot, { backgroundColor: 'rgba(255,255,255,0.6)' }]} />
+                      </View>
                     )}
                   </TouchableOpacity>
                 );
@@ -191,85 +311,95 @@ export default function CalendarScreen() {
           </>
         )}
 
-        {/* Week strip */}
+        {/* ── Week strip ───────────────────────────────────────────────── */}
         {view === 'week' && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.dayStrip}
-            contentContainerStyle={styles.dayStripContent}
-          >
-            {getWeekDates().map((d, i) => {
-              const sel = d.toDateString() === selectedDate.toDateString();
-              const todayD = d.toDateString() === new Date().toDateString();
-              return (
-                <TouchableOpacity key={i} onPress={() => setSelectedDate(d)} style={styles.stripDay}>
-                  <Text style={[styles.stripDayName, { color: colors.mutedForeground }]}>
-                    {DAYS_SHORT[d.getDay()]}
-                  </Text>
-                  <View
-                    style={[
-                      styles.stripDayNum,
-                      sel && { backgroundColor: colors.calendar },
-                      todayD && !sel && { borderWidth: 1, borderColor: colors.calendar },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.stripDayNumText,
-                        { color: sel ? '#fff' : todayD ? colors.calendar : colors.foreground },
-                      ]}
-                    >
-                      {d.getDate()}
-                    </Text>
-                  </View>
-                  {hasEvents(d) && !sel && (
-                    <View style={[styles.eventDot, { backgroundColor: colors.calendar }]} />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
+          <>
+            <View style={styles.weekNavRow}>
+              <TouchableOpacity onPress={prevWeek} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Feather name="chevron-left" size={18} color={colors.mutedForeground} />
+              </TouchableOpacity>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.dayStrip}
+                contentContainerStyle={styles.dayStripContent}
+              >
+                {weekDates.map((d, i) => {
+                  const sel = d.toDateString() === selectedDate.toDateString();
+                  const todayD = d.toDateString() === new Date().toDateString();
+                  const dayEvents = getEventsForDate(d);
+                  return (
+                    <TouchableOpacity key={i} onPress={() => setSelectedDate(d)} style={styles.stripDay}>
+                      <Text style={[styles.stripDayName, { color: todayD ? colors.calendar : colors.mutedForeground }]}>
+                        {DAYS_SHORT[d.getDay()]}
+                      </Text>
+                      <View
+                        style={[
+                          styles.stripDayNum,
+                          sel && { backgroundColor: colors.calendar },
+                          todayD && !sel && { borderWidth: 1.5, borderColor: colors.calendar },
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.stripDayNumText,
+                            { color: sel ? '#fff' : todayD ? colors.calendar : colors.foreground },
+                          ]}
+                        >
+                          {d.getDate()}
+                        </Text>
+                      </View>
+                      {!sel && <EventDots events={dayEvents.slice(0, 3)} />}
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+              <TouchableOpacity onPress={nextWeek} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                <Feather name="chevron-right" size={18} color={colors.mutedForeground} />
+              </TouchableOpacity>
+            </View>
+          </>
         )}
 
-        {/* Day navigation bar */}
+        {/* ── Day navigation ───────────────────────────────────────────── */}
         {view === 'day' && (
           <View style={styles.dayNav}>
-            <TouchableOpacity onPress={prevDay} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <TouchableOpacity onPress={prevDay} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
               <Feather name="chevron-left" size={20} color={colors.foreground} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => setSelectedDate(new Date())} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <TouchableOpacity onPress={goToToday} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
               <Text style={[styles.dayNavLabel, { color: colors.foreground }]}>
-                {selectedDate.toDateString() === new Date().toDateString()
+                {isViewingToday
                   ? 'Today'
                   : selectedDate.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}
               </Text>
-              <Text style={[styles.dayNavSub, { color: colors.mutedForeground }]}>
-                {selectedDate.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
-              </Text>
+              {!isViewingToday && (
+                <Text style={[styles.dayNavSub, { color: colors.mutedForeground }]}>
+                  {selectedDate.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                </Text>
+              )}
             </TouchableOpacity>
-            <TouchableOpacity onPress={nextDay} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <TouchableOpacity onPress={nextDay} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
               <Feather name="chevron-right" size={20} color={colors.foreground} />
             </TouchableOpacity>
           </View>
         )}
       </View>
 
-      {/* Content */}
+      {/* ── Content ────────────────────────────────────────────────────── */}
       {useTimeGrid ? (
         <TimeGrid
           events={selectedEvents}
           date={selectedDate}
           calendarColor={colors.calendar}
           onEventPress={id => router.push(`/calendar/${id}`)}
-          onSlotPress={handleNewEventAtSlot}
+          onSlotPress={() => router.push('/calendar/new')}
         />
       ) : (
         <>
-          {/* Selected date header for month view */}
           <View style={styles.selectedDateRow}>
             <Text style={[styles.selectedDateLabel, { color: colors.foreground }]}>
-              {selectedDate.toDateString() === new Date().toDateString()
+              {isViewingToday
                 ? 'Today'
                 : selectedDate.toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}
             </Text>
@@ -289,7 +419,7 @@ export default function CalendarScreen() {
               <EmptyState
                 icon="calendar"
                 title="No events"
-                subtitle="Tap a day to view or tap + to add"
+                subtitle="Tap + to add, or swipe to another day"
                 accentColor={colors.calendar}
               />
             ) : (
@@ -315,6 +445,14 @@ const styles = StyleSheet.create({
   },
   headerTitle: { fontSize: 28, fontFamily: 'Inter_700Bold', letterSpacing: -0.5 },
   headerActions: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  todayPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
+  },
+  todayPillText: { fontSize: 12, fontFamily: 'Inter_600SemiBold' },
   viewToggle: { flexDirection: 'row', padding: 3, gap: 2 },
   viewBtn: { paddingHorizontal: 10, paddingVertical: 4 },
   viewBtnText: { fontSize: 12, fontFamily: 'Inter_600SemiBold' },
@@ -329,13 +467,13 @@ const styles = StyleSheet.create({
   dayHeaders: { flexDirection: 'row', marginBottom: 4 },
   dayHeader: { flex: 1, textAlign: 'center', fontSize: 11, fontFamily: 'Inter_500Medium' },
   grid: { flexDirection: 'row', flexWrap: 'wrap' },
-  dayCell: { width: '14.28%', alignItems: 'center', paddingVertical: 2 },
-  dayInner: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  dayCell: { width: '14.28%', alignItems: 'center', paddingVertical: 3, minHeight: 52 },
+  dayInner: { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center' },
   dayNum: { fontSize: 13, fontFamily: 'Inter_500Medium' },
-  eventDot: { width: 4, height: 4, borderRadius: 2, marginTop: 1 },
-  dayStrip: { marginBottom: 8 },
-  dayStripContent: { paddingHorizontal: 4, gap: 4 },
-  stripDay: { alignItems: 'center', paddingHorizontal: 6 },
+  weekNavRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  dayStrip: { flex: 1, marginBottom: 2 },
+  dayStripContent: { paddingHorizontal: 2, gap: 4 },
+  stripDay: { alignItems: 'center', paddingHorizontal: 6, minWidth: 40 },
   stripDayName: { fontSize: 11, fontFamily: 'Inter_500Medium', marginBottom: 4 },
   stripDayNum: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   stripDayNumText: { fontSize: 15, fontFamily: 'Inter_600SemiBold' },
@@ -344,10 +482,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 4,
-    paddingBottom: 4,
+    paddingBottom: 6,
   },
   dayNavLabel: { fontSize: 15, fontFamily: 'Inter_600SemiBold', textAlign: 'center' },
-  dayNavSub: { fontSize: 12, fontFamily: 'Inter_400Regular', textAlign: 'center', marginTop: 2 },
+  dayNavSub: { fontSize: 12, fontFamily: 'Inter_400Regular', textAlign: 'center', marginTop: 1 },
   selectedDateRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
