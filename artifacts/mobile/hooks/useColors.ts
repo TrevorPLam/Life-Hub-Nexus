@@ -9,9 +9,6 @@ import colors from '@/constants/colors';
  * system appearance setting.
  */
 export function useColors() {
-  const palette =
-    'dark' in colors
-      ? (colors as Record<string, typeof colors.light>).dark
-      : colors.light;
+  const palette = colors.dark;
   return { ...palette, radius: colors.radius };
 }

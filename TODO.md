@@ -342,7 +342,7 @@ pnpm --filter @workspace/mobile run build
 
 ---
 
-## [ ] T-009 | STATUS: TODO | Fix pre-existing typecheck errors
+## [x] T-009 | STATUS: DONE | Fix pre-existing typecheck errors
 
 **Purpose:** Resolve TypeScript compilation errors that existed before T-007 implementation.
 
@@ -366,14 +366,15 @@ pnpm run typecheck
 
 ### Subtasks
 
-- [ ] T-009.01 | AGENT | Target: `artifacts/mockup-sandbox/src/` | Fix React type conflicts in UI components (spinner.tsx, calendar.tsx).
-- [ ] T-009.02 | AGENT | Target: `artifacts/mobile/hooks/useColors.ts` | Fix type conversion error in colors type assertion.
-- [ ] T-009.03 | AGENT | Target: `TODO.md` | Run full typecheck and record results.
+- [x] T-009.01 | AGENT | Target: `artifacts/mockup-sandbox/src/` | Fix React type conflicts in UI components (spinner.tsx, calendar.tsx).
+- [x] T-009.02 | AGENT | Target: `artifacts/mobile/hooks/useColors.ts` | Fix type conversion error in colors type assertion.
+- [x] T-009.03 | AGENT | Target: `TODO.md` | Run full typecheck and record results.
 
 ---
 
 ## Completion Notes
 
 - **Task completion record format:** `YYYY-MM-DD | TASK-ID | commands run | result | follow-up or none`.
-- **Current record:** 
+- **Current record:**
   - 2026-07-19 | T-007 | Test foundation | DONE | Added Jest 29.7 with ts-jest to mobile and api-server packages. Created jest.config.cjs files for both (ES module compatibility). Added test scripts and @types/jest dependencies. Created example test files with deterministic factories. Added GitHub Actions quality workflow. Documented testing conventions in replit.md. Mobile tests pass (2/2). API server tests pass (2/2). Pre-existing typecheck errors in mockup-sandbox and mobile (useColors.ts) exist outside task scope - added as separate issue.
+  - 2026-07-19 | T-009 | Fix pre-existing typecheck errors | DONE | Fixed React type conflicts in mockup-sandbox by adding workspace overrides to force all packages to use @types/react@^19.2.0 and @types/react-dom@^19.2.0. Fixed type conversion error in mobile/hooks/useColors.ts by simplifying to always use dark palette (both palettes are dark per design). Full typecheck now passes across all packages (api-server, mobile, mockup-sandbox, scripts).
