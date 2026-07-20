@@ -4,16 +4,22 @@ import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useColors } from '@/hooks/useColors';
-import { useWork } from '@/context/WorkContext';
+import { useWork, TaskStatus } from '@/context/WorkContext';
 import { TaskItem } from '@/components/work/TaskItem';
-import { PriorityBadge, StatusBadge } from '@/components/ui/Tag';
 import { LinkedItems } from '@/components/ui/LinkedItems';
 import { ScreenHeader } from '@/components/ui/ScreenHeader';
+import { DatePickerModal } from '@/components/ui/DatePickerModal';
+
+const STATUS_OPTIONS: { key: TaskStatus; label: string; icon: string; color: string }[] = [
+  { key: 'todo', label: 'To Do', icon: 'circle', color: '#6B7280' },
+  { key: 'in-progress', label: 'In Progress', icon: 'loader', color: '#3B82F6' },
+  { key: 'done', label: 'Done', icon: 'check-circle', color: '#10B981' },
+];
 
 export default function TaskDetailScreen() {
   const colors = useColors();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { getTask, updateTask, deleteTask, toggleComplete, getSubtasks, linkItem, unlinkItem, addTask } = useWork();
+  const { getTask, updateTask, deleteTask, getSubtasks, linkItem, unlinkItem, addTask } = useWork();
 
   const task = getTask(id as string);
   const subtasks = getSubtasks(id as string);
@@ -23,6 +29,7 @@ export default function TaskDetailScreen() {
   const [isEditingDesc, setIsEditingDesc] = useState(false);
   const [descVal, setDescVal] = useState(task?.description || '');
   const [newSubtask, setNewSubtask] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   if (!task) {
     return (
@@ -32,15 +39,23 @@ export default function TaskDetailScreen() {
     );
   }
 
-  const isDone = task.status === 'done';
   const dueDate = task.dueDate ? new Date(task.dueDate) : null;
-  const dueDateStr = dueDate ? dueDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) : 'No due date';
+  const dueDateStr = dueDate ? dueDate.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) : 'Set due date';
+  const isOverdue = dueDate && dueDate < new Date() && task.status !== 'done';
 
   const handleDelete = () => {
     Alert.alert('Delete Task', 'Are you sure you want to delete this task?', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: () => { deleteTask(task.id); router.back(); } },
     ]);
+  };
+
+  const handleStatusChange = (status: TaskStatus) => {
+    updateTask(task.id, {
+      status,
+      completedAt: status === 'done' ? new Date().toISOString() : undefined,
+    });
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
   const handleAddSubtask = () => {
@@ -56,21 +71,37 @@ export default function TaskDetailScreen() {
     </TouchableOpacity>
   );
 
+  // Format date to YYYY-MM-DD for DatePickerModal
+  const dueDateISO = dueDate
+    ? `${dueDate.getFullYear()}-${String(dueDate.getMonth() + 1).padStart(2, '0')}-${String(dueDate.getDate()).padStart(2, '0')}`
+    : (() => { const n = new Date(); return `${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}-${String(n.getDate()).padStart(2, '0')}`; })();
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ScreenHeader title="Task" rightElement={deleteButton} />
       <KeyboardAvoidingView style={styles.kav} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingBottom: Platform.OS === 'web' ? 60 : 80 }]}>
 
-          {/* Status row */}
+          {/* 3-state Status Picker */}
           <View style={styles.statusRow}>
-            <TouchableOpacity onPress={() => { toggleComplete(task.id); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
-              style={[styles.completeBtn, { borderColor: isDone ? colors.work : `${colors.work}50`, backgroundColor: isDone ? `${colors.work}15` : 'transparent' }]}>
-              <Feather name={isDone ? 'check-circle' : 'circle'} size={18} color={colors.work} />
-              <Text style={[styles.completeBtnText, { color: isDone ? colors.work : colors.mutedForeground }]}>
-                {isDone ? 'Completed' : 'Mark complete'}
-              </Text>
-            </TouchableOpacity>
+            {STATUS_OPTIONS.map(opt => {
+              const isActive = task.status === opt.key;
+              return (
+                <TouchableOpacity
+                  key={opt.key}
+                  onPress={() => handleStatusChange(opt.key)}
+                  style={[
+                    styles.statusBtn,
+                    { borderColor: isActive ? opt.color : `${opt.color}30`, backgroundColor: isActive ? `${opt.color}18` : 'transparent' },
+                  ]}
+                >
+                  <Feather name={opt.icon as any} size={14} color={isActive ? opt.color : colors.mutedForeground} />
+                  <Text style={[styles.statusBtnText, { color: isActive ? opt.color : colors.mutedForeground }]}>
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           {/* Title */}
@@ -85,42 +116,51 @@ export default function TaskDetailScreen() {
             />
           ) : (
             <TouchableOpacity onPress={() => setIsEditingTitle(true)}>
-              <Text style={[styles.title, { color: colors.foreground, textDecorationLine: isDone ? 'line-through' : 'none', opacity: isDone ? 0.5 : 1 }]}>
+              <Text style={[styles.title, { color: colors.foreground, textDecorationLine: task.status === 'done' ? 'line-through' : 'none', opacity: task.status === 'done' ? 0.5 : 1 }]}>
                 {task.title}
               </Text>
             </TouchableOpacity>
           )}
 
-          {/* Badges */}
-          <View style={styles.badgeRow}>
-            <StatusBadge status={task.status} />
-            <PriorityBadge priority={task.priority} />
-          </View>
-
-          {/* Meta */}
+          {/* Meta card */}
           <View style={[styles.metaCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             {/* Priority */}
             <View style={styles.metaRow}>
               <Feather name="flag" size={14} color={colors.mutedForeground} />
               <Text style={[styles.metaLabel, { color: colors.mutedForeground }]}>Priority</Text>
               <View style={styles.metaValueRow}>
-                {(['low', 'medium', 'high'] as const).map(p => (
-                  <TouchableOpacity key={p} onPress={() => updateTask(task.id, { priority: p })}
-                    style={[styles.priorityBtn, { backgroundColor: task.priority === p ? `${p === 'high' ? '#EF4444' : p === 'medium' ? '#F97316' : '#6B7280'}20` : colors.muted }]}>
-                    <Text style={{ fontSize: 11, fontFamily: 'Inter_600SemiBold', color: task.priority === p ? (p === 'high' ? '#EF4444' : p === 'medium' ? '#F97316' : '#6B7280') : colors.mutedForeground, textTransform: 'capitalize' }}>{p}</Text>
-                  </TouchableOpacity>
-                ))}
+                {(['low', 'medium', 'high'] as const).map(p => {
+                  const pc = p === 'high' ? '#EF4444' : p === 'medium' ? '#F97316' : '#6B7280';
+                  return (
+                    <TouchableOpacity key={p} onPress={() => { updateTask(task.id, { priority: p }); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}
+                      style={[styles.priorityBtn, { backgroundColor: task.priority === p ? `${pc}20` : colors.muted, borderWidth: 1, borderColor: task.priority === p ? pc : 'transparent' }]}>
+                      <Text style={{ fontSize: 11, fontFamily: 'Inter_600SemiBold', color: task.priority === p ? pc : colors.mutedForeground, textTransform: 'capitalize' }}>{p}</Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
 
             <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-            {/* Due date */}
-            <View style={styles.metaRow}>
-              <Feather name="clock" size={14} color={colors.mutedForeground} />
+            {/* Due date — tappable */}
+            <TouchableOpacity style={styles.metaRow} onPress={() => setShowDatePicker(true)}>
+              <Feather name="clock" size={14} color={isOverdue ? colors.destructive : colors.mutedForeground} />
               <Text style={[styles.metaLabel, { color: colors.mutedForeground }]}>Due</Text>
-              <Text style={[styles.metaValue, { color: colors.foreground }]}>{dueDateStr}</Text>
-            </View>
+              <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={[styles.metaValue, { color: isOverdue ? colors.destructive : task.dueDate ? colors.foreground : colors.mutedForeground }]}>
+                  {dueDateStr}
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                  <Feather name="edit-2" size={12} color={colors.mutedForeground} />
+                  {task.dueDate && (
+                    <TouchableOpacity onPress={() => { updateTask(task.id, { dueDate: undefined }); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                      <Feather name="x" size={14} color={colors.mutedForeground} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+            </TouchableOpacity>
 
             {task.tags.length > 0 && (
               <>
@@ -164,7 +204,7 @@ export default function TaskDetailScreen() {
                 {subtasks.map(sub => (
                   <TaskItem key={sub.id} task={sub} compact
                     onPress={() => router.push(`/work/${sub.id}`)}
-                    onToggle={() => toggleComplete(sub.id)} />
+                    onToggle={() => { updateTask(sub.id, { status: sub.status !== 'done' ? 'done' : 'todo', completedAt: sub.status !== 'done' ? new Date().toISOString() : undefined }); }} />
                 ))}
               </View>
             )}
@@ -199,6 +239,20 @@ export default function TaskDetailScreen() {
 
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Due date picker */}
+      <DatePickerModal
+        visible={showDatePicker}
+        value={dueDateISO}
+        onConfirm={iso => {
+          const [y, m, d] = iso.split('-').map(Number);
+          const picked = new Date(y, m - 1, d, 12, 0, 0);
+          updateTask(task.id, { dueDate: picked.toISOString() });
+          setShowDatePicker(false);
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        }}
+        onDismiss={() => setShowDatePicker(false)}
+      />
     </View>
   );
 }
@@ -208,12 +262,11 @@ const styles = StyleSheet.create({
   kav: { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: { padding: 20 },
-  statusRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-  completeBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5 },
-  completeBtnText: { fontSize: 14, fontFamily: 'Inter_500Medium' },
-  title: { fontSize: 26, fontFamily: 'Inter_700Bold', letterSpacing: -0.5, lineHeight: 34, marginBottom: 12 },
-  titleInput: { fontSize: 26, fontFamily: 'Inter_700Bold', letterSpacing: -0.5, lineHeight: 34, marginBottom: 12, borderBottomWidth: 2, paddingBottom: 4 },
-  badgeRow: { flexDirection: 'row', gap: 6, marginBottom: 16 },
+  statusRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  statusBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingVertical: 8, borderRadius: 10, borderWidth: 1.5 },
+  statusBtnText: { fontSize: 11, fontFamily: 'Inter_600SemiBold' },
+  title: { fontSize: 26, fontFamily: 'Inter_700Bold', letterSpacing: -0.5, lineHeight: 34, marginBottom: 16 },
+  titleInput: { fontSize: 26, fontFamily: 'Inter_700Bold', letterSpacing: -0.5, lineHeight: 34, marginBottom: 16, borderBottomWidth: 2, paddingBottom: 4 },
   metaCard: { borderRadius: 12, borderWidth: StyleSheet.hairlineWidth, marginBottom: 20, overflow: 'hidden' },
   metaRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12, gap: 10 },
   metaLabel: { fontSize: 13, fontFamily: 'Inter_400Regular', width: 60 },
