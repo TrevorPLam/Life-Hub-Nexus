@@ -85,6 +85,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+        "409":
+          description: Conflict - profile modified since last retrieval
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
     delete:
       operationId: deleteProfile
       tags: [profile]
@@ -284,6 +290,10 @@ components:
           type: boolean
         privacy:
           $ref: "#/components/schemas/ProfilePrivacy"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Client timestamp for conflict detection
     Error:
       type: object
       properties:

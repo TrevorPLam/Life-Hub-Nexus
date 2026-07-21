@@ -129,7 +129,8 @@ export const UpdateProfileBody = zod.object({
   "about": zod.enum(['public', 'friends', 'private']).default(updateProfileBodyPrivacyAboutDefault),
   "pronouns": zod.enum(['public', 'friends', 'private']).default(updateProfileBodyPrivacyPronounsDefault),
   "socialLinks": zod.enum(['public', 'friends', 'private']).default(updateProfileBodyPrivacySocialLinksDefault)
-}).optional()
+}).optional(),
+  "updatedAt": zod.coerce.date().optional().describe('Client timestamp for conflict detection')
 })
 
 export const updateProfileResponseNameDefault = ``;

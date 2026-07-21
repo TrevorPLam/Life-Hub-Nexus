@@ -335,7 +335,7 @@ pnpm --filter @workspace/api-server run typecheck
 
 ---
 
-## [ ] T-018 | STATUS: TODO | Adapt the authenticated profile use cases to the HTTP contract
+## [x] T-018 | STATUS: DONE | Adapt the authenticated profile use cases to the HTTP contract
 
 **Purpose:** Replace mock profile routes with validated adapters around the completed profile application module.
 
@@ -367,10 +367,18 @@ pnpm --filter @workspace/api-server run typecheck
 
 ### Subtasks
 
-- [ ] T-018.01 | AGENT | Target: `lib/api-spec/openapi.yaml`, `artifacts/api-server/src/routes/profile.ts`, `artifacts/api-server/src/routes/profile.test.ts` | Analyze the profile application result types and current contract. Reconcile status codes, validation errors, not-found behavior, and conflict response before editing.
-- [ ] T-018.02 | AGENT | Target: `artifacts/api-server/src/routes/profile.test.ts` | Write failing Given/When/Then route tests for missing/invalid credentials, actor-scoped retrieval, rejected client owner header, valid update, invalid body, conflict, deletion, and not-found behavior.
-- [ ] T-018.03 | AGENT | Target: `lib/api-spec/openapi.yaml`, `artifacts/api-server/src/routes/profile.ts`, `lib/api-zod/src/generated/`, `lib/api-client-react/src/generated/` | Update the contract only when required by application behavior, regenerate artifacts, and implement the thin authenticated route adapter.
-- [ ] T-018.04 | AGENT | Target: `replit.md`, `TODO.md` | Document the profile HTTP contract and generation command. Run only listed route/codegen/typecheck commands and record results.
+- [x] T-018.01 | AGENT | Target: `lib/api-spec/openapi.yaml`, `artifacts/api-server/src/routes/profile.ts`, `artifacts/api-server/src/routes/profile.test.ts` | Analyzed the profile application result types and current contract. Reconciled status codes: added optional `updatedAt` to `UpdateProfile` and `409 Conflict` to `PUT /profile`; kept `404` for `GET` and `DELETE` not-found.
+- [x] T-018.02 | AGENT | Target: `artifacts/api-server/src/routes/profile.test.ts` | Wrote Given/When/Then route tests for missing/invalid credentials, actor-scoped retrieval, rejected `X-User-Id` header, valid update, update-with-creation, invalid body, stale `updatedAt` conflict, deletion, and not-found behavior.
+- [x] T-018.03 | AGENT | Target: `lib/api-spec/openapi.yaml`, `artifacts/api-server/src/routes/profile.ts`, `lib/api-zod/src/generated/`, `lib/api-client-react/src/generated/` | Updated the OpenAPI contract where application behavior required it, regenerated Orval artifacts, and implemented the thin `createProfileRouter` HTTP adapter. Routes contain no Drizzle queries and rely on `req.actor` from `createAuthMiddleware`.
+- [x] T-018.04 | AGENT | Target: `replit.md`, `TODO.md` | Documented the profile HTTP adapter and contract. Ran listed validation commands and full workspace typecheck; all passed.
+
+**Task completion notes:**
+- `artifacts/api-server/src/routes/profile.ts` now exports `createProfileRouter({ repo, clock })`, a thin adapter over `getProfile`, `updateProfile`, and `deleteProfile` use cases.
+- `artifacts/api-server/src/routes/index.ts` accepts profile dependencies and wires them into `createApiRouter`.
+- `artifacts/api-server/src/app.ts` composes the production `DrizzleProfileRepository` and `systemClock`.
+- OpenAPI `UpdateProfile` gained an optional `updatedAt` field for conflict detection; `PUT /profile` gained a `409` response.
+- Generated `lib/api-zod` and `lib/api-client-react` artifacts were regenerated with Orval and are not hand-edited.
+- Validation results: route tests 15/15 passed, codegen succeeded, API typecheck passed, full workspace typecheck passed, full API tests 34/34 passed, mobile tests 26/26 passed.
 
 ---
 

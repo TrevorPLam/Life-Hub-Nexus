@@ -54,6 +54,8 @@ A local-first, modular life-operations mobile app and API monolith. Currently at
 - **Server profile application:** `artifacts/api-server/src/application/profile/profile.ts` - owner-scoped `getProfile`, `updateProfile`, `deleteProfile` use cases with validation and conflict semantics
 - **Server profile repository port:** `artifacts/api-server/src/application/profile/ProfileRepository.ts` - domain `Profile`, `ProfileUpdate`, `ProfileError`, and `ProfileRepository` port
 - **Server profile data adapter:** `artifacts/api-server/src/data/profile/DrizzleProfileRepository.ts` - Drizzle upsert/owner-scoped queries for PostgreSQL
+- **Server profile HTTP adapter:** `artifacts/api-server/src/routes/profile.ts` - thin Express router factory that maps HTTP to the profile use cases and validates request/response shapes against generated Zod schemas
+- **Server profile route tests:** `artifacts/api-server/src/routes/profile.test.ts` - Given/When/Then tests for authentication, ownership isolation, validation, conflict, and deletion
 - **Server profile application tests:** `artifacts/api-server/src/application/profile/profile.test.ts` - Given/When/Then tests proving owner isolation, validation, conflict, and deletion
 - **Relationship cleanup domain:** `artifacts/mobile/domain/references/EntityReferencePolicy.ts` - pure functions on feature-neutral DTOs
 - **Relationship cleanup adapter:** `artifacts/mobile/domain/references/ReferenceCleanupService.ts` - `ReferenceCollectionStore` port and `createAsyncStorageReferenceCollectionStore` anti-corruption layer
@@ -95,7 +97,7 @@ _Populate as you build — explicit user instructions worth remembering across s
 ## Gotchas
 
 - **Mobile static build requires deployment domain:** `pnpm --filter @workspace/mobile run build` requires `REPLIT_INTERNAL_APP_DOMAIN`, `REPLIT_DEV_DOMAIN`, or `EXPO_PUBLIC_DOMAIN` environment variable to be set. This is expected for production builds on Replit or similar platforms.
-- **API routes are mock-only:** Profile endpoints in `artifacts/api-server/src/routes/` still return deterministic in-memory data. The profile application module and Drizzle adapter are implemented in T-017; HTTP route wiring happens in T-018.
+- **Profile API routes:** `GET/PUT/DELETE /api/profile` are now backed by the profile application module and `DrizzleProfileRepository`. They require a valid `Authorization: Bearer <token>` header (verified by the `AuthVerifier` port) and a configured `DATABASE_URL` at runtime. A placeholder `AuthVerifier` rejects all tokens until T-016 wires a real identity provider.
 - **Authentication boundary:** The API server verifies bearer tokens through an `AuthVerifier` port and injects an `AuthenticatedActor` into protected routes. Client-owned `X-User-Id` headers are rejected. A placeholder verifier rejects all tokens until T-016. See `docs/architecture/identity-decision.md` for the provider-neutral contract and evaluation criteria.
 - **`.env.example` present:** See `.env.example` for copy-ready, non-secret environment variable templates.
 - **Formatting/linting scripts missing:** `pnpm run format:check` and `pnpm run lint` do not exist at the root yet.

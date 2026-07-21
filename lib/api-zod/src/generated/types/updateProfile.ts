@@ -26,4 +26,6 @@ export interface UpdateProfile {
   socialLinkedin?: string;
   onboarded?: boolean;
   privacy?: ProfilePrivacy;
+  /** Client timestamp for conflict detection */
+  updatedAt?: Date;
 }

@@ -88,15 +88,16 @@ See `.env.example` for a copy-ready template.
 
 ## Current limitations
 
-- The API server profile routes are currently in-memory mocks; they do not
-  persist to the PostgreSQL database.
+- Profile API routes (`GET/PUT/DELETE /api/profile`) are now backed by the
+  profile application module and `DrizzleProfileRepository`, persisting to the
+  PostgreSQL database. They require a valid bearer token and `DATABASE_URL`.
 - Authentication is implemented as a server-side boundary: a bearer token is
   verified by an `AuthVerifier` port and the resulting `AuthenticatedActor` is
   injected into protected routes. Client-owned `X-User-Id` headers are rejected.
   A placeholder verifier rejects all tokens until T-016 wires a real identity
   provider.
-- `lib/db` defines a `profiles` table, but no migration or runtime integration
-  exists yet.
+- `lib/db` defines a `profiles` table and a generated migration; apply it with
+  `pnpm --filter @workspace/db run push` (dev only).
 - The mobile build (`pnpm --filter @workspace/mobile run build`) requires a
   deployment domain (`REPLIT_INTERNAL_APP_DOMAIN`, `REPLIT_DEV_DOMAIN`, or
   `EXPO_PUBLIC_DOMAIN`).
