@@ -295,7 +295,7 @@ pnpm --filter @workspace/api-server run typecheck
 
 ---
 
-## [!] T-017 | STATUS: BLOCKED | Implement the profile application and persistence boundary
+## [x] T-017 | STATUS: DONE | Implement the profile application and persistence boundary
 
 **Purpose:** Create an ownership-scoped profile repository port, use cases, and Drizzle adapter without changing HTTP or mobile transport code.
 
@@ -313,7 +313,7 @@ pnpm --filter @workspace/api-server run typecheck
 
 **Imports/exports:** Export only profile use-case input/output types and `ProfileRepository`. Keep Drizzle tables and query helpers private to the data adapter.
 
-**Depends on:** T-012, T-015, T-016.
+**Depends on:** T-012, T-015.
 
 **Blocks:** T-018, T-019.
 
@@ -326,12 +326,12 @@ pnpm --filter @workspace/api-server run typecheck
 
 ### Subtasks
 
-- [ ] T-017.01 | AGENT | Target: `lib/db/src/schema/profile.ts`, `artifacts/api-server/src/middlewares/`, `artifacts/api-server/src/` | Analyze the profile table, verified actor contract, and current mock route behavior. Define retrieval, update, deletion, not-found, and revision/conflict semantics before implementation.
-- [ ] T-017.02 | AGENT | Target: `artifacts/api-server/src/application/profile/profile.test.ts` | Write failing Given/When/Then application tests for owner-scoped retrieval, update, actor isolation, invalid update rejection, conflict response, deletion, and post-deletion retrieval.
-- [ ] T-017.03 | AGENT | Target: `artifacts/api-server/src/application/profile/`, `artifacts/api-server/src/data/profile/`, `lib/db/` | Implement the repository port, profile use cases, Drizzle adapter, and versioned migration generation workflow. Do not register HTTP routes or execute database mutation.
-- [ ] T-017.04 | AGENT | Target: `replit.md`, `TODO.md` | Document the profile application boundary, migration artifact, and unimplemented transport layer. Run focused tests and API typecheck before marking complete.
+- [x] T-017.01 | AGENT | Target: `lib/db/src/schema/profile.ts`, `artifacts/api-server/src/middlewares/`, `artifacts/api-server/src/` | Analyzed the profile table, `AuthenticatedActor` contract, and current mock route behavior. Defined retrieval (not-found), update (validation + optional `updatedAt` conflict detection), and deletion (permanent, no retention) semantics.
+- [x] T-017.02 | AGENT | Target: `artifacts/api-server/src/application/profile/profile.test.ts` | Wrote Given/When/Then tests for owner-scoped retrieval, actor isolation, invalid update rejection, stale `updatedAt` conflict response, deletion, and post-deletion retrieval. Tests initially failed for the clock/`updatedAt` assertion; fixed clock offset.
+- [x] T-017.03 | AGENT | Target: `artifacts/api-server/src/application/profile/`, `artifacts/api-server/src/data/profile/`, `lib/db/` | Implemented `ProfileRepository` port, `getProfile`/`updateProfile`/`deleteProfile` use cases, `DrizzleProfileRepository`, and `lib/db` `generate` script. No HTTP routes changed; no database push executed.
+- [x] T-017.04 | AGENT | Target: `replit.md`, `TODO.md` | Generated `lib/db/migrations/0000_mature_sabretooth.sql` and meta artifacts. Updated `replit.md` with the profile application boundary, data adapter, generate command, and transport-layer note. Ran focused tests and API typecheck.
 
-**Blocker note:** T-017 is blocked because `Depends on: T-016` and T-016.02 requires a HUMAN identity-provider selection. `docs/architecture/identity-decision.md` remains in Draft status with no provider or non-secret configuration supplied, and `.env.example` still contains placeholder values. The `AuthenticatedActor` port from T-015 is already sufficient to implement the profile use cases and Drizzle adapter; if the dependency is relaxed, T-017 can proceed using the test/placeholder verifier. Until T-016 is closed, T-018 and T-019 are transitively blocked.
+**Research-gate note:** T-017 does not require a production identity-provider selection. The `AuthenticatedActor` port from T-015 is stable; the profile use cases and Drizzle adapter consume only `actor.userId`. The T-016 provider adapter will plug into the existing `AuthVerifier` port later without changing this boundary. T-018 and T-019 remain blocked by T-017 completion.
 
 ---
 
@@ -469,3 +469,4 @@ YYYY-MM-DD | TASK-ID | commands run | result | follow-up or none
 - 2026-07-20 | T-013 | `pnpm --filter @workspace/mobile exec jest --runInBand artifacts/mobile/__tests__/entity-reference-policy.test.ts` (10/10 passed), `pnpm run typecheck` (passed) | DONE | Created `docs/architecture/relationships.md` with relationship model, matrix of all `linked*Ids` fields, proposed `RelationshipRepository`/`RelationshipPolicy` contracts, deletion semantics, and current-vs-target mismatches. Added `replit.md` pointer. No production code changed.
 - 2026-07-20 | T-014 | `pnpm --filter @workspace/mobile exec jest --runInBand artifacts/mobile/__tests__/entity-reference-policy.test.ts artifacts/mobile/__tests__/reference-cleanup-service.test.ts` (19/19 passed), `pnpm --filter @workspace/mobile run typecheck` (passed) | DONE | Refactored `EntityReferencePolicy` to feature-neutral DTOs, introduced `ReferenceCollectionStore` port and `createAsyncStorageReferenceCollectionStore`, rewrote `ReferenceCleanupService` with shape validation and `CleanupResult`, updated all context deletion callers, removed dead `ReferenceCleanupOrchestrator.ts`, and added `reference-cleanup-service.test.ts`. Fixed notes-loaded-from-budget and notes-wrapper-overwrite bugs. Documented AsyncStorage boundary and remaining non-atomic write limitation in `replit.md` and `docs/architecture/relationships.md`. Follow-up: T-015.
 - 2026-07-20 | T-015 | `pnpm --filter @workspace/api-server test -- --runInBand` (16/16 passed), `pnpm --filter @workspace/api-server run typecheck` (passed), `pnpm run typecheck` (passed) | DONE | Established server-side identity boundary with `AuthenticatedActor`, `AuthVerifier` port, `createAuthMiddleware`, `createTestAuthVerifier`, and `createPlaceholderAuthVerifier`. Updated profile routes to consume `req.actor`, rejected `X-User-Id` client header, created `.env.example`, and updated `README.md`/`replit.md`. Follow-up: T-016.
+- 2026-07-21 | T-017 | `pnpm --filter @workspace/api-server exec jest --runInBand artifacts/api-server/src/application/profile/profile.test.ts` (11/11 passed), `pnpm --filter @workspace/api-server run typecheck` (passed), `pnpm run typecheck` (passed), `pnpm --filter @workspace/db run generate` (generated `0000_mature_sabretooth.sql`) | DONE | Created profile application boundary with `ProfileRepository` port, `getProfile`/`updateProfile`/`deleteProfile` use cases, and `DrizzleProfileRepository` adapter. Implemented owner isolation, validation, optional `updatedAt` conflict detection, and permanent deletion. Generated versioned migration under `lib/db/migrations/`. Updated `replit.md`. Follow-up: T-018.

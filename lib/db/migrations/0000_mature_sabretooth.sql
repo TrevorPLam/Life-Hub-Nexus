@@ -1,0 +1,23 @@
+CREATE TABLE "profiles" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text DEFAULT '' NOT NULL,
+	"username" text DEFAULT '' NOT NULL,
+	"avatar_color" text DEFAULT '#6366F1' NOT NULL,
+	"avatar_uri" text DEFAULT '' NOT NULL,
+	"pronouns" text DEFAULT '' NOT NULL,
+	"bio" text DEFAULT '' NOT NULL,
+	"about" text DEFAULT '' NOT NULL,
+	"birthday" text DEFAULT '' NOT NULL,
+	"location" text DEFAULT '' NOT NULL,
+	"occupation" text DEFAULT '' NOT NULL,
+	"website" text DEFAULT '' NOT NULL,
+	"phone" text DEFAULT '' NOT NULL,
+	"email" text DEFAULT '' NOT NULL,
+	"social_twitter" text DEFAULT '' NOT NULL,
+	"social_instagram" text DEFAULT '' NOT NULL,
+	"social_linkedin" text DEFAULT '' NOT NULL,
+	"onboarded" boolean DEFAULT false NOT NULL,
+	"privacy" jsonb DEFAULT '{"bio":"public","birthday":"friends","location":"public","occupation":"public","website":"public","phone":"private","email":"private","about":"public","pronouns":"public","socialLinks":"public"}'::jsonb NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);

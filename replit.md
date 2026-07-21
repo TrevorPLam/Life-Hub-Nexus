@@ -9,6 +9,7 @@ A local-first, modular life-operations mobile app and API monolith. Currently at
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec (verified; Orval v8.21.0)
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
+- `pnpm --filter @workspace/db run generate` — generate a versioned migration from the current schema (no DB connection required beyond DATABASE_URL being set)
 - `pnpm --filter @workspace/mobile test -- --runInBand` — run mobile pure-domain tests
 - `pnpm --filter @workspace/api-server test -- --runInBand` — run API server route tests
 - `pnpm --filter @workspace/mobile exec node --test server/serve.test.js` — run mobile preview server security tests (verified; 12/12 pass)
@@ -50,6 +51,10 @@ A local-first, modular life-operations mobile app and API monolith. Currently at
 - **Profile persistence:** `artifacts/mobile/domain/profile/ProfileRepository.ts` - deep module with anti-corruption layer for AsyncStorage
 - **Profile context:** `artifacts/mobile/context/AppContext.tsx` - consumes repository, exposes load/save failure state
 - **Profile tests:** `artifacts/mobile/__tests__/profile-repository.test.ts` - Given/When/Then tests for repository behavior
+- **Server profile application:** `artifacts/api-server/src/application/profile/profile.ts` - owner-scoped `getProfile`, `updateProfile`, `deleteProfile` use cases with validation and conflict semantics
+- **Server profile repository port:** `artifacts/api-server/src/application/profile/ProfileRepository.ts` - domain `Profile`, `ProfileUpdate`, `ProfileError`, and `ProfileRepository` port
+- **Server profile data adapter:** `artifacts/api-server/src/data/profile/DrizzleProfileRepository.ts` - Drizzle upsert/owner-scoped queries for PostgreSQL
+- **Server profile application tests:** `artifacts/api-server/src/application/profile/profile.test.ts` - Given/When/Then tests proving owner isolation, validation, conflict, and deletion
 - **Relationship cleanup domain:** `artifacts/mobile/domain/references/EntityReferencePolicy.ts` - pure functions on feature-neutral DTOs
 - **Relationship cleanup adapter:** `artifacts/mobile/domain/references/ReferenceCleanupService.ts` - `ReferenceCollectionStore` port and `createAsyncStorageReferenceCollectionStore` anti-corruption layer
 - **Relationship cleanup tests:** `artifacts/mobile/__tests__/entity-reference-policy.test.ts` and `artifacts/mobile/__tests__/reference-cleanup-service.test.ts` - policy and adapter tests
@@ -90,7 +95,7 @@ _Populate as you build — explicit user instructions worth remembering across s
 ## Gotchas
 
 - **Mobile static build requires deployment domain:** `pnpm --filter @workspace/mobile run build` requires `REPLIT_INTERNAL_APP_DOMAIN`, `REPLIT_DEV_DOMAIN`, or `EXPO_PUBLIC_DOMAIN` environment variable to be set. This is expected for production builds on Replit or similar platforms.
-- **API routes are mock-only:** Profile endpoints in `artifacts/api-server/src/routes/` return deterministic in-memory data. They are not backed by `lib/db` yet.
+- **API routes are mock-only:** Profile endpoints in `artifacts/api-server/src/routes/` still return deterministic in-memory data. The profile application module and Drizzle adapter are implemented in T-017; HTTP route wiring happens in T-018.
 - **Authentication boundary:** The API server verifies bearer tokens through an `AuthVerifier` port and injects an `AuthenticatedActor` into protected routes. Client-owned `X-User-Id` headers are rejected. A placeholder verifier rejects all tokens until T-016. See `docs/architecture/identity-decision.md` for the provider-neutral contract and evaluation criteria.
 - **`.env.example` present:** See `.env.example` for copy-ready, non-secret environment variable templates.
 - **Formatting/linting scripts missing:** `pnpm run format:check` and `pnpm run lint` do not exist at the root yet.
